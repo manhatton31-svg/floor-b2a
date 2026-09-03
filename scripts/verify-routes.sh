@@ -20,7 +20,18 @@ assert "gmv" not in body
 desk = next(item for item in body["items"] if item["title"] == "FLOOR desk")
 assert desk["kind"] == "digital"
 assert desk["payment"]["checkout_url"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
-assert not desk["payment"].get("accepts")
+accepts = desk["payment"]["accepts"]
+assert len(accepts) == 2
+base = next(row for row in accepts if row["network"] == "base")
+sol = next(row for row in accepts if row["network"] == "solana")
+assert base["scheme"] == "exact"
+assert base["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
+assert base["asset"] == "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+assert base["maxAmountRequired"] == "49000000"
+assert sol["scheme"] == "exact"
+assert sol["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
+assert sol["asset"] == "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+assert sol["maxAmountRequired"] == "49000000"
 assert "payTo" not in desk
 assert len(desk["specs"]) >= 6
 print(json.dumps(body, indent=2))
@@ -136,9 +147,17 @@ from pathlib import Path
 body = json.loads(Path("/tmp/floor-pay.json").read_text())
 assert body["x402Version"] == 1
 assert body["checkout_url"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
-assert body["accepts"] == []
 assert body["settlement"] == "not_settled"
-assert "payTo" not in json.dumps(body["accepts"])
+accepts = body["accepts"]
+assert len(accepts) == 2
+base = next(row for row in accepts if row["network"] == "base")
+sol = next(row for row in accepts if row["network"] == "solana")
+assert base["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
+assert base["asset"] == "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+assert base["maxAmountRequired"] == "49000000"
+assert sol["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
+assert sol["asset"] == "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+assert sol["maxAmountRequired"] == "49000000"
 PY
 
 echo "== POST incomplete listing without pay method =="

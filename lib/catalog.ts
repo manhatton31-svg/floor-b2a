@@ -1,6 +1,15 @@
 import { listListings } from "./listing-store";
-import { expandPayment, type ListingPayment } from "./payment";
+import { expandPayment, USDC, type ListingPayment } from "./payment";
 import { DESK_CHECKOUT, DESK_PRICE, PROTOCOL } from "./site";
+
+/** Public receive addresses only. Never a private key. */
+export const HOUSE_DESK_PAYTO = {
+  base: "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10",
+  solana: "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL",
+} as const;
+
+/** $49 USDC, 6 decimals. Same price as the desk. */
+const HOUSE_DESK_X402_AMOUNT = "49000000";
 
 export type CatalogSpec = {
   name: string;
@@ -52,13 +61,33 @@ const FLOOR_DESK: CatalogItem = {
   checkout: DESK_CHECKOUT,
   payment: {
     checkout_url: DESK_CHECKOUT,
+    accepts: [
+      {
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: HOUSE_DESK_X402_AMOUNT,
+        asset: USDC.base.asset,
+        payTo: HOUSE_DESK_PAYTO.base,
+        resource: "/pay/floor-desk",
+        description: "FLOOR desk",
+      },
+      {
+        scheme: "exact",
+        network: "solana",
+        maxAmountRequired: HOUSE_DESK_X402_AMOUNT,
+        asset: USDC.solana.asset,
+        payTo: HOUSE_DESK_PAYTO.solana,
+        resource: "/pay/floor-desk",
+        description: "FLOOR desk",
+      },
+    ],
   },
   specs: [
     { name: "Term", value: "12 months" },
     { name: "Price", value: "$49 once" },
     { name: "What you list", value: "products for shopping bots" },
     { name: "Public list", value: "GET /api/catalog" },
-    { name: "Pay", value: "bot pays at the listing checkout link" },
+    { name: "Pay", value: "bot pays at the listing checkout link or x402 details" },
     { name: "House list", value: "may start with this desk only" },
   ],
   inventory: 0,
@@ -71,7 +100,7 @@ const FLOOR_DESK: CatalogItem = {
   delivery: "membership access on Whop after payment",
 };
 
-/** FLOOR’s own product. No invented x402 wallet. Do not invent other house products. */
+/** FLOOR’s own product. Public receive addresses only. Do not invent other house products. */
 export const HOUSE_ITEMS: CatalogItem[] = [FLOOR_DESK];
 
 export function reservedIds(): string[] {

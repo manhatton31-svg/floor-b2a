@@ -14,7 +14,7 @@ export const X402_DOCS = "https://docs.x402.org/core-concepts/http-402";
 
 export type X402Network = "base" | "solana";
 
-/** Public USDC contract addresses. 6 decimals. Not secrets. */
+/** Public USDC contracts from https://docs.x402.org/core-concepts/network-and-token-support. 6 decimals. Not secrets. */
 export const USDC = {
   base: {
     network: "base" as const,

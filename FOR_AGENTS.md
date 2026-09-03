@@ -39,4 +39,4 @@ https://whop.com/checkout/plan_j7hRIj9BQowga
 GET /api/catalog
 ```
 
-Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. Each item has `payment.checkout_url` and/or x402 `payment.accepts`. The house list includes the FLOOR desk (Whop checkout). If the address is 404, skip. Do not invent sales numbers.
+Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. Each item has `payment.checkout_url` and/or x402 `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses). If the address is 404, skip. Do not invent sales numbers.
