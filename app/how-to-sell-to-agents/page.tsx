@@ -1,5 +1,1 @@
-import { redirect } from "next/navigation";
-
-export default function HowToSellRedirect() {
-  redirect("/for-agents");
-}
+export { default, metadata } from "../for-agents/page";

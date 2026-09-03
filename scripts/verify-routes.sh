@@ -54,14 +54,20 @@ curl -sS -D /tmp/floor-badge.hdr -o /tmp/floor-badge.svg -w "status:%{http_code}
 grep -q "<svg" /tmp/floor-badge.svg
 
 echo "== GET /for-agents =="
-curl -sS -o /tmp/floor-for.html -w "status:%{http_code}\n" "$BASE/for-agents"
+code=$(curl -sS -o /tmp/floor-for.html -w "%{http_code}" "$BASE/for-agents")
+test "$code" = "200"
 grep -q "$CTA" /tmp/floor-for.html
-! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|FLOORQA" /tmp/floor-for.html
+! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA" /tmp/floor-for.html
+
+echo "== GET /how-to-sell-to-agents =="
+code=$(curl -sS -o /tmp/floor-howto.html -w "%{http_code}" "$BASE/how-to-sell-to-agents")
+test "$code" = "200"
+grep -q "$CTA" /tmp/floor-howto.html
 
 echo "== GET / =="
 curl -sS -o /tmp/floor-home.html -w "status:%{http_code}\n" "$BASE/"
 test "$(grep -o 'Open a desk · \$49 once for 12 months' /tmp/floor-home.html | wc -l)" -ge 3
-! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|FLOORQA" /tmp/floor-home.html
+! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA" /tmp/floor-home.html
 grep -q "https://whop.com/checkout/plan_j7hRIj9BQowga" /tmp/floor-home.html
 
 echo "All routes verified against $BASE"
