@@ -65,7 +65,8 @@ export function Funnel({
           <h3>Bots read the list</h3>
           <p>
             Complete listings can be bought at the checkout link or x402
-            details on the listing. Incomplete listings get skipped.
+            details on the listing. A buy settles when the agent pays that
+            rail. Incomplete listings get skipped.
           </p>
         </article>
       </section>
@@ -87,9 +88,9 @@ export function Funnel({
         <p className="lede">
           After 12 months it ends unless you buy again. The first listing is
           free. That is not a coupon and the desk is not $0. The $49 desk
-          checkout is live. Other products pay at the checkout link or x402
-          wallet the seller entered. FLOOR does not settle those payments or
-          hold funds.
+          checkout is live. Other products settle when the buyer pays the
+          checkout link or x402 rail the seller entered. FLOOR does not hold
+          the money.
         </p>
       </section>
 

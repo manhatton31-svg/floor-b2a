@@ -6,7 +6,7 @@
  * https://x402.org/
  *
  * This module never asks for or stores private keys, seed phrases, or secret API keys.
- * FLOOR does not settle x402 or hold customer funds.
+ * A buy settles when the agent pays the listing checkout or x402 rail. FLOOR does not hold funds.
  */
 
 export const X402_SPEC = "https://x402.org/";
@@ -210,4 +210,22 @@ export function paymentRequiredHeader(input: {
 
 export function hasPaymentSignature(request: Request): boolean {
   return Boolean(request.headers.get("PAYMENT-SIGNATURE") || request.headers.get("X-PAYMENT"));
+}
+
+export function paymentChallengeBody(input: {
+  payment: ListingPayment;
+  extra?: Record<string, unknown>;
+}) {
+  const error = input.payment.accepts?.length
+    ? "Payment required. Pay at checkout_url or via x402 accepts."
+    : "Payment required. Pay at checkout_url.";
+  return {
+    x402Version: 1 as const,
+    accepts: input.payment.accepts ?? [],
+    checkout_url: input.payment.checkout_url,
+    error,
+    spec: X402_SPEC,
+    settlement: "not_settled" as const,
+    ...input.extra,
+  };
 }

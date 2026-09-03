@@ -6,9 +6,18 @@ PAY="https://whop.com/checkout/plan_j7hRIj9BQowga"
 SPECS='[{"name":"Capacity","value":"12 oz"},{"name":"Material","value":"ceramic"},{"name":"Color","value":"navy"},{"name":"Weight","value":"380 g"},{"name":"Dishwasher","value":"yes"},{"name":"Microwave","value":"safe"}]'
 DIGITAL_SPECS='[{"name":"Format","value":"JPEG"},{"name":"Count","value":"24 photos"},{"name":"Resolution","value":"4000 px"},{"name":"Color","value":"sRGB"},{"name":"License","value":"one buyer"},{"name":"Size","value":"120 MB"}]'
 
+echo "== CORS OPTIONS on catalog / listings / buy =="
+for path in /api/catalog /api/listings /api/buy; do
+  curl -sS -D "/tmp/floor-cors-${path##*/}.hdr" -o /dev/null -X OPTIONS "$BASE$path"
+  grep -i '^access-control-allow-origin: \*' "/tmp/floor-cors-${path##*/}.hdr"
+  grep -i '^access-control-allow-methods:.*GET' "/tmp/floor-cors-${path##*/}.hdr"
+  grep -i '^access-control-allow-methods:.*POST' "/tmp/floor-cors-${path##*/}.hdr"
+done
+
 echo "== GET /api/catalog =="
 curl -sS -D /tmp/floor-catalog.hdr -o /tmp/floor-catalog.json -A "verify-routes-catalog" "$BASE/api/catalog"
 grep -i '^content-type: application/json' /tmp/floor-catalog.hdr
+grep -i '^access-control-allow-origin: \*' /tmp/floor-catalog.hdr
 python3 - <<'PY'
 import json
 from pathlib import Path
@@ -37,12 +46,20 @@ assert len(desk["specs"]) >= 6
 print(json.dumps(body, indent=2))
 PY
 
-echo "== GET /llms.txt =="
+echo "== GET /llms.txt starts with three curls =="
 curl -sS -o /tmp/floor-llms.txt -w "status:%{http_code}\n" "$BASE/llms.txt"
+python3 - <<PY
+from pathlib import Path
+lines = [line for line in Path("/tmp/floor-llms.txt").read_text().splitlines() if line.strip()]
+assert lines[0].startswith("curl -sS -X POST ") and "/api/listings" in lines[0], lines[0]
+assert lines[1].startswith("curl -sS -X POST ") and "/api/buy" in lines[1] and "floor-desk" in lines[1], lines[1]
+assert lines[2].startswith("curl -sS -X POST ") and "/api/listings" in lines[2], lines[2]
+PY
 grep -q "$CTA" /tmp/floor-llms.txt
 grep -q "GET /api/catalog" /tmp/floor-llms.txt
 grep -q "POST" /tmp/floor-llms.txt
 grep -q "/api/listings" /tmp/floor-llms.txt
+grep -q "/api/buy" /tmp/floor-llms.txt
 grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-llms.txt
 grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-llms.txt
 grep -q "/desk" /tmp/floor-llms.txt
@@ -55,6 +72,7 @@ echo "== GET /openapi.yaml =="
 curl -sS -o /tmp/floor-openapi.yaml -w "status:%{http_code}\n" "$BASE/openapi.yaml"
 grep -q "/api/catalog" /tmp/floor-openapi.yaml
 grep -q "/api/listings" /tmp/floor-openapi.yaml
+grep -q "/api/buy" /tmp/floor-openapi.yaml
 grep -q "checkout" /tmp/floor-openapi.yaml
 
 echo "== GET /.well-known/agent.json =="
@@ -68,6 +86,8 @@ assert body["settlement"] == "not_settled"
 assert "/api/catalog" in body["catalog"]["url"]
 assert "/api/listings" in body["listings"]["url"]
 assert "POST" in body["listings"]["methods"]
+assert "/api/buy" in body["buy"]["url"]
+assert body["buy"]["settled"] is False
 assert body["desk"]["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
 assert body["desk"]["x402"][0]["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
 assert body["desk"]["x402"][1]["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
@@ -179,6 +199,33 @@ assert sol["asset"] == "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 assert sol["maxAmountRequired"] == "49000000"
 PY
 
+echo "== POST /api/buy house desk is unpaid 402 =="
+code=$(curl -sS -D /tmp/floor-buy.hdr -o /tmp/floor-buy.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d '{"item_id":"floor-desk"}' \
+  "$BASE/api/buy")
+test "$code" = "402"
+grep -qi 'PAYMENT-REQUIRED' /tmp/floor-buy.hdr
+grep -i '^access-control-allow-origin: \*' /tmp/floor-buy.hdr
+python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-buy.json").read_text())
+pay = json.loads(Path("/tmp/floor-pay.json").read_text())
+assert body["x402Version"] == pay["x402Version"] == 1
+assert body["settlement"] == "not_settled"
+assert body["settled"] is False
+assert body["receipt_id"]
+assert body["checkout_url"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
+assert len(body["accepts"]) == 2
+assert {row["network"] for row in body["accepts"]} == {"base", "solana"}
+assert any(row["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" for row in body["accepts"])
+assert any(row["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" for row in body["accepts"])
+assert "desk_token" not in body
+assert body["accepts"] == pay["accepts"]
+assert body["checkout_url"] == pay["checkout_url"]
+PY
+
 echo "== POST incomplete listing without pay method =="
 code=$(curl -sS -o /tmp/floor-listing-denied.json -w "%{http_code}" \
   -H "Content-Type: application/json" \
@@ -191,7 +238,24 @@ from pathlib import Path
 body = json.loads(Path("/tmp/floor-listing-denied.json").read_text())
 assert body["ok"] is False
 assert "pay" in body["reason"].lower() or "name" in body["reason"].lower()
+assert body.get("field")
+assert body.get("skip")
 assert "gmv" not in body
+PY
+
+echo "== POST incomplete listing missing return_days =="
+code=$(curl -sS -o /tmp/floor-listing-noreturn.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d "{\"kind\":\"digital\",\"name\":\"No refund days ${RANDOM}\",\"specs\":$DIGITAL_SPECS,\"inventory\":\"unlimited\",\"warranty\":\"none\",\"delivery\":\"download\",\"lead_time\":\"instant\",\"payment\":{\"checkout_url\":\"https://pay.example.com/photos\"}}" \
+  "$BASE/api/listings")
+test "$code" = "400"
+python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-listing-noreturn.json").read_text())
+assert body["ok"] is False
+assert body["field"] == "return_days"
+assert body["skip"] == ["no return_days"]
 PY
 
 echo "== agent POST digital listing is 201 on catalog and listings =="
@@ -260,8 +324,56 @@ body = json.loads(Path("/tmp/floor-listing-second.json").read_text())
 assert body["ok"] is False
 assert "desk" in body["reason"].lower()
 assert body["desk"]["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
+assert body["desk"]["x402"][0]["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
+assert body["desk"]["x402"][1]["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
 assert "12 months" in body["reason"]
 assert "gmv" not in body
+assert "desk_token" not in body
+PY
+
+echo "== fake Bearer does not open a second listing =="
+code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-fake-bearer.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer desk_not_a_real_token" \
+  -d "{\"title\":\"Fake bearer mug ${RANDOM}\",\"kind\":\"physical\",\"checkout\":\"https://pay.example.com/mug3\",\"specs\":$SPECS,\"inventory\":4,\"return_days\":30,\"warranty\":\"none\",\"ships_from\":\"Austin\",\"lead_time\":\"2 days\"}" \
+  "$BASE/api/listings")
+test "$code" = "402"
+
+echo "== same listing payload returns the original 201 after free is used =="
+code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-replay.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d "{\"title\":\"$TITLE\",\"kind\":\"physical\",\"checkout\":\"https://pay.example.com/mug\",\"specs\":$SPECS,\"inventory\":20,\"return_days\":30,\"warranty\":\"1 year\",\"ships_from\":\"Austin, TX\",\"lead_time\":\"2 days\"}" \
+  "$BASE/api/listings")
+test "$code" = "201"
+python3 - <<'PY'
+import json
+from pathlib import Path
+posted = json.loads(Path("/tmp/floor-listing-ok.json").read_text())
+replay = json.loads(Path("/tmp/floor-listing-replay.json").read_text())
+assert posted["item"]["sku"] == replay["item"]["sku"]
+PY
+
+echo "== listing Idempotency-Key returns the original 201 =="
+KEY="verify-idemp-${RANDOM}"
+ITITLE="Idemp pack ${RANDOM}"
+code1=$(curl -sS -o /tmp/floor-idemp-1.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $KEY" \
+  -d "{\"kind\":\"digital\",\"name\":\"$ITITLE\",\"specs\":$DIGITAL_SPECS,\"inventory\":\"unlimited\",\"refund_days\":0,\"warranty\":\"none\",\"delivery\":\"download\",\"lead_time\":\"instant\",\"payment\":{\"checkout_url\":\"https://pay.example.com/photos\"}}" \
+  "$BASE/api/listings")
+code2=$(curl -sS -o /tmp/floor-idemp-2.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $KEY" \
+  -d "{\"kind\":\"digital\",\"name\":\"$ITITLE\",\"specs\":$DIGITAL_SPECS,\"inventory\":\"unlimited\",\"refund_days\":0,\"warranty\":\"none\",\"delivery\":\"download\",\"lead_time\":\"instant\",\"payment\":{\"checkout_url\":\"https://pay.example.com/photos\"}}" \
+  "$BASE/api/listings")
+test "$code1" = "201"
+test "$code2" = "201"
+python3 - <<'PY'
+import json
+from pathlib import Path
+a = json.loads(Path("/tmp/floor-idemp-1.json").read_text())
+b = json.loads(Path("/tmp/floor-idemp-2.json").read_text())
+assert a["item"]["sku"] == b["item"]["sku"]
 PY
 
 echo "== digital listing after desk ack =="

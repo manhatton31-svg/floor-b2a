@@ -39,6 +39,7 @@ export type CatalogItem = {
   delivery?: string;
   price?: string;
   refund?: string;
+  skip?: string[];
 };
 
 export type CatalogResponse = {
@@ -87,7 +88,7 @@ const FLOOR_DESK: CatalogItem = {
     { name: "Price", value: "$49 once" },
     { name: "What you list", value: "products for shopping bots" },
     { name: "Public list", value: "GET /api/catalog" },
-    { name: "Pay", value: "bot pays at the listing checkout link or x402 details" },
+    { name: "Pay", value: "a buy settles when the agent pays this checkout or x402 rail" },
     { name: "House list", value: "may start with this desk only" },
   ],
   inventory: 0,
@@ -111,13 +112,20 @@ export function findCatalogItem(id: string): CatalogItem | undefined {
   return HOUSE_ITEMS.find((item) => item.sku === id) || listListings().find((item) => item.sku === id);
 }
 
+export function paymentSkip(payment: ListingPayment | undefined): string[] {
+  if (!payment?.checkout_url && !payment?.accepts?.length) return ["no payment"];
+  return [];
+}
+
 export function buildCatalog(now = new Date(), origin?: string): CatalogResponse {
   const items = [...HOUSE_ITEMS, ...listListings()].map((item) => {
     const payment = expandPayment(item.payment, origin || "");
+    const skip = [...(item.skip ?? []), ...paymentSkip(payment)];
     return {
       ...item,
       payment,
       checkout: payment.checkout_url || item.checkout,
+      ...(skip.length ? { skip } : { skip: undefined }),
     };
   });
   return {

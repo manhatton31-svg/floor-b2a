@@ -30,9 +30,19 @@ export type ListingInput = {
   owner_name?: unknown;
 };
 
-export type ValidatedListing =
-  | { ok: true; item: CatalogItem }
-  | { ok: false; reason: string };
+export type ListingFail = {
+  ok: false;
+  reason: string;
+  field: string;
+  skip: string[];
+  existing_id?: string;
+};
+
+export type ValidatedListing = { ok: true; item: CatalogItem } | ListingFail;
+
+function fail(field: string, skip: string, reason: string, extra?: { existing_id?: string }): ListingFail {
+  return { ok: false, reason, field, skip: [skip], ...extra };
+}
 
 function asText(value: unknown): string {
   if (typeof value === "string") return value.trim();
@@ -162,20 +172,22 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
   const title = asText(body.title);
   const ownerName = asText(body.owner_name) || "desk";
   if (title.length < 3) {
-    return { ok: false, reason: "Give the product a real name." };
+    return fail("title", "no title", "Give the product a real name.");
   }
 
   const id = slugFromTitle(title);
   if (!id) {
-    return { ok: false, reason: "Give the product a real name." };
+    return fail("title", "no title", "Give the product a real name.");
   }
   if (existingIds.includes(id)) {
-    return { ok: false, reason: "That product name is already on the list." };
+    return fail("title", "duplicate_title", "That product name is already on the list.", {
+      existing_id: id,
+    });
   }
 
   const kind = readKind(body.kind);
   if (!kind) {
-    return { ok: false, reason: "Say if it is a physical thing or a digital thing." };
+    return fail("kind", "no kind", "Say if it is a physical thing or a digital thing.");
   }
 
   const paid = buildPayment({
@@ -188,108 +200,102 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     title,
   });
   if (!paid.ok) {
-    return { ok: false, reason: paid.reason };
+    return fail("payment", "no payment", paid.reason);
   }
 
   const specs = readSpecs(body.specs);
   if (!specs) {
-    return {
-      ok: false,
-      reason: "Bots skip listings with fewer than six real specs. Add at least six facts.",
-    };
+    return fail("specs", "no specs", "Bots skip listings with fewer than six real specs. Add at least six facts.");
   }
 
   const incomplete = specs.find((spec) => spec.name.length < 2 || spec.value.length < 2);
   if (incomplete) {
-    return {
-      ok: false,
-      reason:
-        "Each spec needs a name and a fact, like Color and navy. Empty rows do not count.",
-    };
+    return fail(
+      "specs",
+      "no specs",
+      "Each spec needs a name and a fact, like Color and navy. Empty rows do not count.",
+    );
   }
 
   const marketing = specs.find(isMarketingSpec);
   if (marketing) {
-    return {
-      ok: false,
-      reason:
-        "Bots skip marketing talk. Use facts like size, material, or weight — not words like premium or perfect.",
-    };
+    return fail(
+      "specs",
+      "marketing_specs",
+      "Bots skip marketing talk. Use facts like size, material, or weight — not words like premium or perfect.",
+    );
   }
 
   if (specs.length < 6) {
-    return {
-      ok: false,
-      reason: "Bots skip listings with fewer than six real specs. Add at least six facts.",
-    };
+    return fail("specs", "no specs", "Bots skip listings with fewer than six real specs. Add at least six facts.");
   }
 
   const stock = readInventory(body.inventory, kind);
   if ("reason" in stock) {
-    return { ok: false, reason: stock.reason };
+    return fail("inventory", "no inventory", stock.reason);
   }
 
   const returnDays = asInt(body.return_days);
   if (returnDays === null) {
-    return {
-      ok: false,
-      reason:
-        kind === "digital"
-          ? "Bots skip listings with no refund days. Enter a number. Use 0 if you do not give refunds."
-          : "Bots skip listings with no return days. Enter a number. Use 0 if you do not take returns.",
-    };
+    return fail(
+      "return_days",
+      "no return_days",
+      kind === "digital"
+        ? "Bots skip listings with no refund days. Enter a number. Use 0 if you do not give refunds."
+        : "Bots skip listings with no return days. Enter a number. Use 0 if you do not take returns.",
+    );
   }
   if (returnDays < 0) {
-    return {
-      ok: false,
-      reason:
-        kind === "digital"
-          ? "Refund days cannot be negative. Enter a number. Use 0 if you do not give refunds."
-          : "Return days cannot be negative. Enter a number. Use 0 if you do not take returns.",
-    };
+    return fail(
+      "return_days",
+      "no return_days",
+      kind === "digital"
+        ? "Refund days cannot be negative. Enter a number. Use 0 if you do not give refunds."
+        : "Return days cannot be negative. Enter a number. Use 0 if you do not take returns.",
+    );
   }
 
   const warranty = asText(body.warranty);
   if (!warranty) {
-    return {
-      ok: false,
-      reason:
-        kind === "digital"
-          ? "Say what the warranty is. If there is none, write none. If access lasts 12 months, write that."
-          : "Say what the warranty is. If there is none, write none.",
-    };
+    return fail(
+      "warranty",
+      "no warranty",
+      kind === "digital"
+        ? "Say what the warranty is. If there is none, write none. If access lasts 12 months, write that."
+        : "Say what the warranty is. If there is none, write none.",
+    );
   }
 
   const leadTime = asText(body.lead_time);
   if (!leadTime) {
-    return {
-      ok: false,
-      reason:
-        kind === "digital"
-          ? "Bots skip listings with no delivery time. Say how long until they get it. Instant is allowed."
-          : "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
-    };
+    return fail(
+      "lead_time",
+      "no lead_time",
+      kind === "digital"
+        ? "Bots skip listings with no delivery time. Say how long until they get it. Instant is allowed."
+        : "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
+    );
   }
 
   const slaHours = parseSlaHours(leadTime);
   if (slaHours === null) {
-    return {
-      ok: false,
-      reason:
-        kind === "digital"
-          ? "Bots skip listings with no delivery time. Say how long until they get it, like instant or 1 hour."
-          : "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
-    };
+    return fail(
+      "lead_time",
+      "no lead_time",
+      kind === "digital"
+        ? "Bots skip listings with no delivery time. Say how long until they get it, like instant or 1 hour."
+        : "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
+    );
   }
 
   if (kind === "digital") {
     const delivery = asText(body.delivery);
     if (!delivery) {
-      return {
-        ok: false,
-        reason:
-          "Bots skip digital listings with no delivery method. Say how they get it: account access, download, email, or login.",
-      };
+      return fail(
+        "delivery",
+        "no delivery",
+        "Bots skip digital listings with no delivery method. Say how they get it: account access, download, email, or login.",
+      );
     }
 
     return {
@@ -315,7 +321,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
 
   const shipsFrom = asText(body.ships_from);
   if (!shipsFrom) {
-    return { ok: false, reason: "Say where it ships from, like a city or warehouse." };
+    return fail("ships_from", "no ships_from", "Say where it ships from, like a city or warehouse.");
   }
 
   return {

@@ -73,6 +73,7 @@ export const PUBLIC_PATHS = [
   "/how-to-sell-to-agents",
   "/api/catalog",
   "/api/listings",
+  "/api/buy",
   "/llms.txt",
   "/openapi.yaml",
   "/.well-known/agent.json",

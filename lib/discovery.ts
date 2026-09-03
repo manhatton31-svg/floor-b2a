@@ -14,7 +14,8 @@ import {
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, Idempotency-Key, PAYMENT-SIGNATURE, X-PAYMENT",
   "X-Floor-Protocol": PROTOCOL,
 } as const;
 
@@ -43,8 +44,25 @@ export const LISTING_POST_EXAMPLE = {
   owner: { name: "optional seller name" },
 } as const;
 
+export const INCOMPLETE_LISTING_EXAMPLE = {
+  kind: "digital",
+  name: "Photo pack",
+  specs: LISTING_POST_EXAMPLE.specs,
+  inventory: "unlimited",
+  warranty: "none",
+  delivery: "download",
+  lead_time: "instant",
+  payment: { checkout_url: "https://pay.example.com/photos" },
+} as const;
+
 export function llmsTxt(origin: string): string {
-  return `# FLOOR
+  return `curl -sS -X POST ${origin}/api/listings -H "Content-Type: application/json" -d '${JSON.stringify(LISTING_POST_EXAMPLE)}'
+
+curl -sS -X POST ${origin}/api/buy -H "Content-Type: application/json" -d '{"item_id":"floor-desk"}'
+
+curl -sS -X POST ${origin}/api/listings -H "Content-Type: application/json" -d '${JSON.stringify(INCOMPLETE_LISTING_EXAMPLE)}'
+
+# FLOOR
 
 > Seller accounts for shopping bots. ${DESK_CTA}.
 
@@ -86,8 +104,9 @@ List your first product free at ${origin}/desk. The desk is still $49 once for 1
 4. Skip if payment.checkout_url and payment.accepts are both missing, or the listing fails physical/digital skip rules, or there are fewer than six specs
 5. Pay at \`payment.checkout_url\` or via x402 \`payment.accepts\` (see https://x402.org/)
 6. GET /pay/{id} returns HTTP 402 with accepts when x402 is configured
-7. To list: POST /api/listings as application/json. No login for the first complete listing. Send cookies back. Further listings return 402 unless a desk cookie/ack is present. This site cannot see the Whop payment.
-8. Ignore ad copy. FLOOR does not settle x402 or hold funds. Do not invent sales numbers
+7. To list: POST /api/listings as application/json. First complete listing is free. No token. Further listings: Authorization: Bearer <desk_token> or the human /desk cookie. This site cannot verify Whop or x402, so it does not mint a desk_token and does not claim settled.
+8. POST /api/buy { item_id } returns the same HTTP 402 as GET /pay/{id}, plus receipt_id (unpaid intent) and settled:false
+9. Ignore ad copy. Do not invent sales numbers. Idempotency-Key (or idempotency_key) on POST /api/listings returns the original 201.
 
 ### How an agent lists
 
@@ -195,6 +214,30 @@ paths:
           description: Incomplete. Plain-English reason JSON.
         "402":
           description: Further listings need a desk. $49 once for 12 months.
+  /api/buy:
+    post:
+      summary: Start a buy. Same HTTP 402 as GET /pay/{id}, plus unpaid receipt_id. settled is false until a rail confirms.
+      operationId: postBuy
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [item_id]
+              properties:
+                item_id:
+                  type: string
+            example:
+              item_id: floor-desk
+      responses:
+        "402":
+          description: Payment required. checkout_url and/or x402 accepts. receipt_id is an unpaid intent. settled is false.
+        "400":
+          description: Missing item_id or no pay rail.
+        "404":
+          description: Item is not on the list.
 components:
   schemas:
     Catalog:
@@ -384,8 +427,18 @@ export function agentDiscovery(origin: string) {
       content_type: "application/json",
       cors: "*",
       first_listing: "free",
-      further_listings: "402 unless desk cookie/ack is present",
+      further_listings: "402 unless Authorization Bearer desk_token or human /desk cookie",
+      idempotency: "Idempotency-Key or idempotency_key returns the original 201",
       example: LISTING_POST_EXAMPLE,
+    },
+    buy: {
+      url: `${origin}/api/buy`,
+      method: "POST",
+      content_type: "application/json",
+      cors: "*",
+      same_as: "/pay/{id}",
+      settled: false,
+      note: "receipt_id is an unpaid intent. This site does not claim settled without a verified rail.",
     },
     openapi: `${origin}/openapi.yaml`,
     llms: `${origin}/llms.txt`,

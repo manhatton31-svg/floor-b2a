@@ -82,6 +82,8 @@ test("missing pay method is a skip", () => {
   assert.equal(none.ok, false);
   if (none.ok) return;
   assert.match(none.reason, /no way to pay/);
+  assert.equal(none.field, "payment");
+  assert.deepEqual(none.skip, ["no payment"]);
 });
 
 test("incomplete listings fail with skip-rule English", () => {
@@ -89,16 +91,26 @@ test("incomplete listings fail with skip-rule English", () => {
   assert.equal(few.ok, false);
   if (few.ok) return;
   assert.match(few.reason, /fewer than six real specs/);
+  assert.equal(few.field, "specs");
+  assert.deepEqual(few.skip, ["no specs"]);
 
   const stock = validateListing({ ...completePhysical, inventory: 0 });
   assert.equal(stock.ok, false);
   if (stock.ok) return;
   assert.match(stock.reason, /no stock/);
+  assert.equal(stock.field, "inventory");
 
   const delivery = validateListing({ ...completeDigital, delivery: "" });
   assert.equal(delivery.ok, false);
   if (delivery.ok) return;
   assert.match(delivery.reason, /delivery method/);
+  assert.equal(delivery.field, "delivery");
+
+  const refund = validateListing({ ...completeDigital, return_days: undefined, refund_days: undefined });
+  assert.equal(refund.ok, false);
+  if (refund.ok) return;
+  assert.equal(refund.field, "return_days");
+  assert.deepEqual(refund.skip, ["no return_days"]);
 });
 
 test("agent JSON aliases match the human form", () => {

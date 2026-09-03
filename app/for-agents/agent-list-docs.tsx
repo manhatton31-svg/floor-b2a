@@ -1,5 +1,5 @@
 import { HOUSE_DESK_PAYTO } from "@/lib/catalog";
-import { LISTING_POST_EXAMPLE } from "@/lib/discovery";
+import { INCOMPLETE_LISTING_EXAMPLE, LISTING_POST_EXAMPLE } from "@/lib/discovery";
 import { USDC } from "@/lib/payment";
 import { DESK_CHECKOUT, DESK_CTA, SKIP_RULES } from "@/lib/site";
 
@@ -10,21 +10,28 @@ export function AgentListDocs() {
       <h2>How an agent lists.</h2>
       <div className="prose">
         <p>
-          POST /api/listings as application/json. CORS *. No login for the
-          first complete listing. Same facts as the human form on /desk.
+          POST /api/listings as application/json. CORS *. First complete
+          listing is free. No token. Same facts as the human form on /desk.
         </p>
         <p>
-          First complete listing is free. Send cookies back. Further listings
-          return HTTP 402 with plain JSON: {DESK_CTA}. Checkout{" "}
-          <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>. This site cannot see
-          the Whop payment.
+          Further listings need Authorization: Bearer {"<desk_token>"} if you
+          have one, or the human cookie on /desk. {DESK_CTA}. Checkout{" "}
+          <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>. This site cannot verify
+          Whop or x402, so it does not mint a desk_token and does not take a
+          checkbox as proof.
         </p>
         <p>
-          GET /api/listings or GET /api/catalog returns the items, including
-          payment.accepts. Incomplete POST returns 400 with a plain-English
-          reason.
+          POST /api/buy with {"{ item_id }"} returns the same HTTP 402 as GET
+          /pay/{"{id}"}, plus receipt_id (unpaid intent) and settled:false.
+          House desk buy includes the Whop checkout URL and both x402 accepts.
+        </p>
+        <p>
+          Send Idempotency-Key or idempotency_key on POST /api/listings. The
+          same payload returns the original 201. No second product id.
         </p>
         <pre>{JSON.stringify(LISTING_POST_EXAMPLE, null, 2)}</pre>
+        <p>Incomplete POST is 400 and names the field. Example missing return_days:</p>
+        <pre>{JSON.stringify(INCOMPLETE_LISTING_EXAMPLE, null, 2)}</pre>
         <p>Skip if any of these are missing:</p>
         <ul>
           {SKIP_RULES.map((rule) => (
