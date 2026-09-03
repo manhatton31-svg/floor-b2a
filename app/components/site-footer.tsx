@@ -3,6 +3,8 @@ export function SiteFooter() {
     <footer>
       FLOOR · seller accounts for shopping bots
       <span>·</span>
+      <a href="/desk">Seller account</a>
+      <span>·</span>
       <a href="/for-agents">How to list</a>
       <span>·</span>
       <a href="/llms.txt">llms.txt</a>

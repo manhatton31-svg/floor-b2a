@@ -1,3 +1,4 @@
+import { listListings } from "./listing-store";
 import { PROTOCOL } from "./site";
 
 export type CatalogSpec = {
@@ -9,7 +10,7 @@ export type CatalogItem = {
   sku: string;
   title: string;
   owner: {
-    type: "house";
+    type: "house" | "desk";
     name: string;
   };
   specs: CatalogSpec[];
@@ -35,7 +36,7 @@ export function buildCatalog(now = new Date()): CatalogResponse {
   return {
     protocol: PROTOCOL,
     generated_at: now.toISOString(),
-    items: HOUSE_ITEMS,
+    items: [...HOUSE_ITEMS, ...listListings()],
     settlement: "not_settled",
   };
 }

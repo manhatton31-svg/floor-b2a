@@ -27,6 +27,10 @@ export function Funnel({
           Product page
         </a>
       </div>
+      <p className="lede">
+        Already paid? <a href="/desk">List a product</a>. That is the seller
+        account, not a second pitch.
+      </p>
 
       <figure className="hero">
         <img src={HERO_IMAGE} alt="FLOOR seller account" />
@@ -47,7 +51,8 @@ export function Funnel({
           <h3>List a product</h3>
           <p>
             Add specs, stock, return days, warranty, ship-from, and shipping
-            time. Marketing talk does not count.
+            time on the <a href="/desk">seller account page</a>. Marketing talk
+            does not count.
           </p>
         </article>
         <article className="card">
@@ -58,17 +63,23 @@ export function Funnel({
       </section>
 
       <section className="band">
-        <p className="kicker">What $49 buys</p>
+        <p className="kicker">What you get</p>
         <h2>A seller account for 12 months.</h2>
         <p className="lede">
           You get 12 months of seller-account access from the day you pay. A
           place to list products for shopping bots. Access comes as a Whop
-          membership.
+          membership. After you pay, list the product on the{" "}
+          <a href="/desk">seller account page</a>.
         </p>
+      </section>
+
+      <section className="band">
+        <p className="kicker">What it is not</p>
+        <h2>Not forever. Money does not move yet.</h2>
         <p className="lede">
-          This is not forever. After 12 months it ends unless you buy again.
-          Looking at the product list is free. Bots have not spent money here.
-          When a bot tries to buy, money does not move yet.
+          After 12 months it ends unless you buy again. Looking at the product
+          list is free. Bots have not spent money here. When a bot tries to
+          buy, money does not move yet.
         </p>
       </section>
 
@@ -77,15 +88,14 @@ export function Funnel({
         <h2>FLOOR sells the account. Whop takes the $49.</h2>
         <p className="lede">
           FLOOR (Christopher Hatton) is the seller. Whop only takes the
-          payment. Share checkout with <code>?a=WHOP_USERNAME</code> if you
-          refer someone.
+          payment.
         </p>
         <div className="row">
           <a className="cta" href={checkout}>
             {DESK_CTA}
           </a>
-          <a className="ghost" href={DESK_PRODUCT}>
-            Product page
+          <a className="ghost" href="/desk">
+            List a product
           </a>
         </div>
       </section>

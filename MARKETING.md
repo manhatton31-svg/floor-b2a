@@ -26,7 +26,7 @@ Paid media is locked until he says desks are making money AND names a dollar cap
 
 ## Product
 FLOOR is a store for shopping bots. Businesses list products. Bots read the list.
-Cash today: Open a desk · $49 once for 12 months. Humans buy a seller account. FLOOR (Christopher Hatton) is the seller. Whop only takes the payment.
+Cash today: Open a desk · $49 once · 12 months. Humans buy a seller account. FLOOR (Christopher Hatton) is the seller. Whop only takes the payment.
 One payment. 12 months. Not forever. After 12 months it ends unless they buy again.
 Shopping bots read GET /api/catalog (field protocol is floor.b2a/v1). When a bot tries to buy, money does not move yet. Do not invent sales numbers.
 FLOOR’s own product list may be empty. Empty is honest. The paid thing is the seller account.
@@ -36,13 +36,13 @@ FLOOR’s own product list may be empty. Empty is honest. The paid thing is the 
 - Product: https://whop.com/floor-6c10/floor-b2a-desk
 - GitHub: https://github.com/manhatton31-svg/floor-b2a
 - Do not treat floor-desk-ecru.vercel.app as this repo's production until GET /api/catalog there returns JSON protocol floor.b2a/v1.
-- Affiliates: checkout + ?a=WHOP_USERNAME. Do not publish any coupon.
+- After someone pays, they list a product at /desk. Do not publish any coupon. Do not present ?a= as live.
 
 ## Always-on playbook
 1. Machine files live next to the product list.
 2. Answer-engine page: How to sell to agents.
 3. Sitemap + robots + index public URLs.
-4. Affiliates: checkout + ?a=WHOP_USERNAME.
+4. Point paying sellers to /desk. Do not present ?a= as live.
 5. Do not invent a public sales tape.
 6. Whop Discover when branding attachments allow.
 7. Embeddable agent-ready badge.
@@ -51,6 +51,6 @@ FLOOR’s own product list may be empty. Empty is honest. The paid thing is the 
 10. Public answers on how to sell to agents.
 
 ## Voice
-Paper/ink, gray, compact, business. No purple, gold, emoji, guru. Short sentences. Everyday words. CTA always: Open a desk · $49 once for 12 months. Put the 12-month term on the same screen as $49.
+Paper/ink, gray, compact, business. No purple, gold, emoji, guru. Short sentences. Everyday words. CTA always: Open a desk · $49 once · 12 months. Put the 12-month term on the same screen as $49.
 
 Start now. Create the bots. Do not wait for a meeting.

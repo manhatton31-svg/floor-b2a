@@ -14,7 +14,7 @@ export function GET() {
       ...corsHeaders,
       "Content-Type": "application/json",
       "X-Floor-Protocol": PROTOCOL,
-      "Cache-Control": "public, max-age=30",
+      "Cache-Control": "no-store",
     },
   });
 }

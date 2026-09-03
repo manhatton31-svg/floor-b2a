@@ -1,5 +1,4 @@
 import {
-  AFFILIATE_PARAM,
   DESK_CHECKOUT,
   DESK_CTA,
   DESK_EXPIRATION_DAYS,
@@ -50,7 +49,7 @@ Not forever. After 12 months it ends unless you buy again. Bots have not spent m
 
 FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
-Affiliates: ${DESK_CHECKOUT}?${AFFILIATE_PARAM}=WHOP_USERNAME
+People list products at ${origin}/desk after they pay.
 
 ## For machines
 
@@ -63,6 +62,7 @@ Affiliates: ${DESK_CHECKOUT}?${AFFILIATE_PARAM}=WHOP_USERNAME
 Product list: ${origin}/api/catalog
 OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
+Seller account: ${origin}/desk
 How to list: ${origin}/for-agents
 Badge: ${origin}/badge.svg
 Sitemap: ${origin}/sitemap.xml
@@ -108,7 +108,7 @@ components:
           format: date-time
         items:
           type: array
-          description: FLOOR’s own products only. May be empty.
+          description: Public products. May be empty. Empty is honest.
           items:
             $ref: "#/components/schemas/CatalogItem"
         settlement:
@@ -116,7 +116,7 @@ components:
           const: not_settled
     CatalogItem:
       type: object
-      description: A FLOOR-owned product must be fully specified. The live list may be empty.
+      description: A listed product must be fully specified. The live list may be empty.
       required:
         - sku
         - title
@@ -139,7 +139,7 @@ components:
           properties:
             type:
               type: string
-              const: house
+              enum: [house, desk]
             name:
               type: string
         specs:
@@ -190,6 +190,7 @@ export function agentDiscovery(origin: string) {
     badge: `${origin}/badge.svg`,
     human: {
       home: `${origin}/`,
+      desk: `${origin}/desk`,
       for_agents: `${origin}/for-agents`,
     },
     skip_rules: [...SKIP_RULES],
@@ -203,7 +204,6 @@ export function agentDiscovery(origin: string) {
       payment: "one_payment",
       subscription: false,
       checkout: DESK_CHECKOUT,
-      affiliate_query_param: AFFILIATE_PARAM,
     },
     settlement: "not_settled",
   };

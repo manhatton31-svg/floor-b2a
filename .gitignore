@@ -4,3 +4,4 @@ out
 .vercel
 *.log
 .env*.local
+data/listings.json

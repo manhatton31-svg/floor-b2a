@@ -1,7 +1,7 @@
 export const PROTOCOL = "floor.b2a/v1" as const;
 
 export const DESK_PRICE = "$49 once for 12 months";
-export const DESK_CTA = "Open a desk · $49 once for 12 months";
+export const DESK_CTA = "Open a desk · $49 once · 12 months";
 export const DESK_ACCESS = "12 months of seller-account access";
 export const DESK_EXPIRATION_DAYS = 365;
 export const DESK_CHECKOUT = "https://whop.com/checkout/plan_j7hRIj9BQowga";
@@ -65,6 +65,7 @@ export const SKIP_RULES = [
 
 export const PUBLIC_PATHS = [
   "/",
+  "/desk",
   "/for-agents",
   "/how-to-sell-to-agents",
   "/api/catalog",
