@@ -10,6 +10,7 @@ import {
 import { DESK_CHECKOUT, DESK_CTA, DESK_PRODUCT } from "@/lib/site";
 import { SiteFooter } from "../components/site-footer";
 import { DeskForm } from "./desk-form";
+import { HowBotsPay } from "./how-bots-pay";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,8 @@ export default async function DeskPage() {
           Product page
         </a>
       </div>
+
+      <HowBotsPay />
 
       {allowSubmit ? (
         <DeskForm initialItems={catalog.items} paid={paid} />

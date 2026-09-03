@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import type { CatalogItem, CatalogSpec, ProductKind } from "@/lib/catalog";
 import { DESK_CHECKOUT, DESK_CTA } from "@/lib/site";
+import { CHECKOUT_HINT, SECRET_HINT, X402_HINT } from "./how-bots-pay";
 
 const EMPTY_SPECS: CatalogSpec[] = Array.from({ length: 6 }, () => ({
   name: "",
@@ -195,9 +196,8 @@ export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFo
         <fieldset className="field">
           <legend>How the bot pays</legend>
           <span className="hint">
-            Enter a checkout link and/or a public x402 wallet. Never paste a
-            private key, seed phrase, or secret key. The $49 desk checkout is
-            live on Whop. Other products pay at the link or wallet you enter.
+            {CHECKOUT_HINT} {X402_HINT} {SECRET_HINT} Need a checkout URL
+            and/or the x402 fields.
           </span>
           <label htmlFor="checkout">Checkout link</label>
           <input
@@ -210,6 +210,7 @@ export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFo
             onChange={(e) => setCheckout(e.target.value)}
             autoComplete="off"
           />
+          <span className="hint">{CHECKOUT_HINT}</span>
           <label htmlFor="payTo">x402 wallet address</label>
           <input
             id="payTo"
@@ -218,6 +219,10 @@ export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFo
             onChange={(e) => setPayTo(e.target.value)}
             autoComplete="off"
           />
+          <span className="hint">
+            Public USDC receive address only. That address is the only
+            credential.
+          </span>
           <label htmlFor="network">x402 network</label>
           <select
             id="network"
@@ -237,7 +242,9 @@ export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFo
             onChange={(e) => setX402Price(e.target.value)}
             autoComplete="off"
           />
-          <span className="hint">Asset is USDC. Public details only.</span>
+          <span className="hint">
+            USDC on the network you picked. Public details only. {SECRET_HINT}
+          </span>
         </fieldset>
 
         {kind === "digital" ? (

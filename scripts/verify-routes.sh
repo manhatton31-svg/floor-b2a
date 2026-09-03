@@ -94,9 +94,14 @@ test "$code" = "200"
 grep -q "$CTA" /tmp/floor-desk.html
 grep -q "List your first product free" /tmp/floor-desk.html
 grep -q "How the bot pays" /tmp/floor-desk.html
+grep -q "How bots pay you" /tmp/floor-desk.html
+grep -q "Stripe Payment Link" /tmp/floor-desk.html
+grep -q "PayPal" /tmp/floor-desk.html
+grep -q "Never enter a seed, private key, password, or Stripe sk_live" /tmp/floor-desk.html
 grep -q "x402 wallet address" /tmp/floor-desk.html
 grep -q "A digital thing" /tmp/floor-desk.html
 ! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA|merchant seat|money does not move" /tmp/floor-desk.html
+! grep -qiE 'name="(seed|private_key|password|sk_live)"' /tmp/floor-desk.html
 
 echo "== house User-Agents are tagged, not named as shopping bots =="
 curl -sS -A "FLOOR-Watch" -o /dev/null "$BASE/api/catalog"
