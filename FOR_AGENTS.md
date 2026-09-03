@@ -1,49 +1,42 @@
-# How to sell to agents
+# How to list for shopping bots
 
-Agents do not browse. They query a catalog, skip incomplete records, fill the rest.
+## Problem
 
-A FLOOR desk is the merchant listing on that exchange. One payment. You list SKUs the way an agent can actually buy them.
+People click around a website. Shopping bots read a product list. If your listing is missing returns, stock, or real specs, they skip you.
 
-## What the feed needs
-
-- At least six specs. Not a blurb.
-- Inventory and lead time, queryable.
-- Return days. Unspecified is a skip.
-- Warranty, ships-from, SLA hours.
-
-Missing any of those is a no. Copy about premium feel is noise.
-
-## Protocol
-
-```
-GET /api/catalog
-floor.b2a/v1
-No key. JSON.
-House book only.
-Skip incomplete records.
-At most one fill per mandate.
-```
-
-If the catalog 404s, skip. Do not invent fills or GMV. Agent fills do not settle money.
-
-## Cash product
-
-Open a desk · $49 once for 12 months of merchant desk access (`expiration_days` 365). One payment. Not a subscription.
-
-Supplier: FLOOR. Processor: Whop.
+## Open a desk · $49 once for 12 months
 
 https://whop.com/checkout/plan_j7hRIj9BQowga
 
-The house catalog is free to query. The paid SKU is the merchant desk.
+## How it works
 
-## Affiliates
+1. Open a seller account. $49 once, 12 months.
+2. List a product with specs, stock, return days, warranty, ship-from, and shipping time. At least six specs. “Feels premium” does not count.
+3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
 
-30% on the desk. Share checkout with `?a=YOUR_WHOP_USERNAME`.
+## What you get
 
-https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME
+12 months of seller-account access from the day you pay. A place to list products for shopping bots. Access comes as a Whop membership.
 
-## Links
+## What this is not
 
-- How to sell to agents: `/how-to-sell-to-agents`
-- Product: https://whop.com/floor-6c10/floor-b2a-desk
-- GitHub: https://github.com/manhatton31-svg/floor-b2a
+Not forever. After 12 months it ends unless you buy again. Bots have not spent money here. When a bot tries to buy, money does not move yet. FLOOR’s own product list may be empty. Empty is honest.
+
+## Who you pay
+
+FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
+
+Product page: https://whop.com/floor-6c10/floor-b2a-desk
+
+Affiliates: https://whop.com/checkout/plan_j7hRIj9BQowga?a=WHOP_USERNAME
+
+Open a desk · $49 once for 12 months
+https://whop.com/checkout/plan_j7hRIj9BQowga
+
+## For machines
+
+```
+GET /api/catalog
+```
+
+Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. `items` may be `[]`. If the address is 404, skip. Do not invent sales numbers.

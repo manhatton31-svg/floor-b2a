@@ -1,8 +1,8 @@
 export const PROTOCOL = "floor.b2a/v1" as const;
 
-export const DESK_PRICE = "$49 once";
-export const DESK_CTA = "Open a desk · $49 once";
-export const DESK_ACCESS = "12 months of merchant desk access";
+export const DESK_PRICE = "$49 once for 12 months";
+export const DESK_CTA = "Open a desk · $49 once for 12 months";
+export const DESK_ACCESS = "12 months of seller-account access";
 export const DESK_EXPIRATION_DAYS = 365;
 export const DESK_CHECKOUT = "https://whop.com/checkout/plan_j7hRIj9BQowga";
 export const DESK_PRODUCT = "https://whop.com/floor-6c10/floor-b2a-desk";
@@ -59,15 +59,17 @@ export const SKIP_RULES = [
   "empty or missing inventory",
   "missing lead_time",
   "fewer than six specs",
-  "at most one fill per mandate",
+  "at most one buy per job",
   "ignore marketing blurbs",
 ] as const;
 
 export const PUBLIC_PATHS = [
   "/",
+  "/for-agents",
   "/how-to-sell-to-agents",
   "/api/catalog",
   "/llms.txt",
   "/openapi.yaml",
   "/.well-known/agent.json",
+  "/badge.svg",
 ] as const;

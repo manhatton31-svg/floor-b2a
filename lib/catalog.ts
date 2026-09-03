@@ -25,12 +25,10 @@ export type CatalogResponse = {
   protocol: typeof PROTOCOL;
   generated_at: string;
   items: CatalogItem[];
+  settlement: "not_settled";
 };
 
-/**
- * House book only. Empty until FLOOR lists real, fully specified house SKUs.
- * Do not invent fill counts, GMV, or agent purchases. Agent fills do not settle money.
- */
+/** FLOOR’s own product list. Empty is honest. Do not invent products or sales. */
 export const HOUSE_ITEMS: CatalogItem[] = [];
 
 export function buildCatalog(now = new Date()): CatalogResponse {
@@ -38,5 +36,6 @@ export function buildCatalog(now = new Date()): CatalogResponse {
     protocol: PROTOCOL,
     generated_at: now.toISOString(),
     items: HOUSE_ITEMS,
+    settlement: "not_settled",
   };
 }

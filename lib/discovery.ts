@@ -1,6 +1,5 @@
 import {
   AFFILIATE_PARAM,
-  DESK_ACCESS,
   DESK_CHECKOUT,
   DESK_CTA,
   DESK_EXPIRATION_DAYS,
@@ -21,77 +20,75 @@ export const corsHeaders = {
 export function llmsTxt(origin: string): string {
   return `# FLOOR
 
-> The exchange where agents buy. Protocol ${PROTOCOL}.
+> Seller accounts for shopping bots. ${DESK_CTA}.
 
-FLOOR is a business-to-agent commerce desk. Agents do not browse. They query a catalog, discard incomplete records, and fill a SKU or skip it. Agent fills do not settle money. Do not invent GMV or agent purchases. The catalog is the house book only.
+## Problem
 
-## Discover
+People click around a website. Shopping bots read a product list. If a listing is missing returns, stock, or real specs, they skip it.
 
-- Catalog (no auth, JSON): ${origin}/api/catalog
-- OpenAPI: ${origin}/openapi.yaml
-- Agent discovery: ${origin}/.well-known/agent.json
-- How to sell to agents: ${origin}/how-to-sell-to-agents
-- Robots: ${origin}/robots.txt
-- Sitemap: ${origin}/sitemap.xml
+## Offer
 
-## Use the catalog
+${DESK_CTA}
+
+Checkout: ${DESK_CHECKOUT}
+
+## How it works
+
+1. Open a seller account. $49 once, 12 months.
+2. List a product with specs, stock, return days, warranty, ship-from, and shipping time.
+3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
+
+## What you get
+
+12 months of seller-account access from the day you pay. A place to list products for shopping bots. Access comes as a Whop membership.
+
+## What this is not
+
+Not forever. After 12 months it ends unless you buy again. Bots have not spent money here. When a bot tries to buy, money does not move yet. Looking at the product list is free. FLOOR’s own product list may be empty. Empty is honest.
+
+## Who you pay
+
+FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
+
+Affiliates: ${DESK_CHECKOUT}?${AFFILIATE_PARAM}=WHOP_USERNAME
+
+## For machines
 
 1. GET /api/catalog
 2. Confirm \`protocol\` is \`${PROTOCOL}\`
-3. Read \`items\` (house book; may be empty)
-4. Apply skip rules before any fill
-5. At most one fill per mandate
+3. Read \`items\` (may be empty)
+4. Skip if return_days is missing, inventory is empty, lead_time is missing, or there are fewer than six specs
+5. Ignore ad copy
 
-Empty items is honest. Do not invent SKUs, fill counts, or GMV.
-
-## Skip rules
-
-Skip a record when any of these are true:
-
-- return_days is null or missing
-- inventory is empty, missing, or not queryable
-- lead_time is missing
-- fewer than six specs
-- the record is only a marketing blurb
-
-Ignore blurbs. Specs, stock, returns, warranty, ships-from, and SLA are the record.
-
-At most one fill per mandate.
-
-## Desk (humans)
-
-${DESK_CTA} for ${DESK_ACCESS} (\`expiration_days\` ${DESK_EXPIRATION_DAYS}). One payment. Not a subscription.
-
-Supplier: ${SUPPLIER}. Processor: ${PROCESSOR}.
-
-CTA: ${DESK_CTA}
-Checkout: ${DESK_CHECKOUT}
-Affiliate: append \`?${AFFILIATE_PARAM}=WHOP_USERNAME\` to the checkout URL, or visit this site with the same query so desk CTAs preserve it.
-
-Skip rules (short): ${SKIP_RULES.join("; ")}.
+Product list: ${origin}/api/catalog
+OpenAPI: ${origin}/openapi.yaml
+Machine file: ${origin}/.well-known/agent.json
+How to list: ${origin}/for-agents
+Badge: ${origin}/badge.svg
+Sitemap: ${origin}/sitemap.xml
 `;
 }
 
 export function openApiYaml(origin: string): string {
   return `openapi: 3.1.0
 info:
-  title: FLOOR catalog
+  title: FLOOR product list
   description: >
-    Public business-to-agent house book. No authentication.
-    Protocol ${PROTOCOL}. Agent fills do not settle money.
-    Do not invent GMV, fill counts, or agent purchases.
+    Public product list for shopping bots. No login.
+    Field protocol is ${PROTOCOL}. settlement is not_settled.
+    When a bot tries to buy, money does not move yet.
   version: "1.0.0"
 servers:
   - url: ${origin}
 paths:
   /api/catalog:
     get:
-      summary: Fetch the FLOOR house catalog
+      summary: Fetch the FLOOR product list
       operationId: getCatalog
       security: []
       responses:
         "200":
-          description: Catalog document
+          description: Product list document
           content:
             application/json:
               schema:
@@ -101,7 +98,7 @@ components:
     Catalog:
       type: object
       additionalProperties: false
-      required: [protocol, generated_at, items]
+      required: [protocol, generated_at, items, settlement]
       properties:
         protocol:
           type: string
@@ -111,14 +108,15 @@ components:
           format: date-time
         items:
           type: array
-          description: House book only. May be empty.
+          description: FLOOR’s own products only. May be empty.
           items:
             $ref: "#/components/schemas/CatalogItem"
+        settlement:
+          type: string
+          const: not_settled
     CatalogItem:
       type: object
-      description: >
-        House-owned SKUs must be fully specified. The live house book
-        may be an empty array.
+      description: A FLOOR-owned product must be fully specified. The live list may be empty.
       required:
         - sku
         - title
@@ -177,7 +175,7 @@ export function agentDiscovery(origin: string) {
   return {
     name: "FLOOR",
     description:
-      "Business-to-agent commerce exchange. Agents query the house catalog, skip incomplete records, and fill a SKU. Agent fills do not settle money.",
+      "Store for shopping bots. Bots read a product list. Missing returns, stock, or real specs means skip. When a bot tries to buy, money does not move yet.",
     protocol: PROTOCOL,
     version: "v1",
     authentication: "none",
@@ -189,9 +187,10 @@ export function agentDiscovery(origin: string) {
     },
     openapi: `${origin}/openapi.yaml`,
     llms: `${origin}/llms.txt`,
+    badge: `${origin}/badge.svg`,
     human: {
       home: `${origin}/`,
-      how_to_sell_to_agents: `${origin}/how-to-sell-to-agents`,
+      for_agents: `${origin}/for-agents`,
     },
     skip_rules: [...SKIP_RULES],
     supplier: SUPPLIER,
@@ -199,15 +198,13 @@ export function agentDiscovery(origin: string) {
     desk: {
       cta: DESK_CTA,
       price: DESK_PRICE,
-      access: DESK_ACCESS,
+      access: "12 months of seller-account access from the day you pay",
       expiration_days: DESK_EXPIRATION_DAYS,
       payment: "one_payment",
       subscription: false,
       checkout: DESK_CHECKOUT,
       affiliate_query_param: AFFILIATE_PARAM,
     },
-    settlement: {
-      agent_fills_settle_money: false,
-    },
+    settlement: "not_settled",
   };
 }

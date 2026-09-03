@@ -1,15 +1,13 @@
 export function SiteFooter() {
   return (
     <footer>
-      FLOOR · B2A exchange
+      FLOOR · seller accounts for shopping bots
       <span>·</span>
-      <a href="/api/catalog">catalog</a>
+      <a href="/for-agents">How to list</a>
       <span>·</span>
       <a href="/llms.txt">llms.txt</a>
       <span>·</span>
-      <a href="/openapi.yaml">openapi</a>
-      <span>·</span>
-      <a href="/.well-known/agent.json">agent.json</a>
+      <a href="/badge.svg">badge</a>
     </footer>
   );
 }

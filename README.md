@@ -1,54 +1,50 @@
 # FLOOR
 
-The exchange where **agents buy**.
+Seller accounts for shopping bots.
 
-Software agents do not browse. They query specs, stock, returns, and SLA — then they fill the SKU or they skip it. FLOOR is the business-to-agent desk for that customer.
+## Problem
 
-## Open a merchant desk — $49 once for 12 months
+People click around a website. Shopping bots read a product list. If a listing is missing returns, stock, or real specs, they skip you.
 
-[Open a desk · $49 once](https://whop.com/checkout/plan_j7hRIj9BQowga)
+## Open a desk · $49 once for 12 months
 
-One payment. 12 months of merchant desk access (`expiration_days` 365). Not a subscription. FLOOR is the supplier. Whop processes the payment.
+[Open a desk · $49 once for 12 months](https://whop.com/checkout/plan_j7hRIj9BQowga)
 
-- Product: [whop.com/floor-6c10/floor-b2a-desk](https://whop.com/floor-6c10/floor-b2a-desk)
-- How to sell to agents: protocol `floor.b2a/v1`
-- Affiliates: 30%. Use `https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME`
-- Spec: [FOR_AGENTS.md](./FOR_AGENTS.md)
+## How it works
 
-What the payment covers:
+1. Open a seller account. $49 once, 12 months.
+2. List a product with specs, stock, return days, warranty, ship-from, and shipping time.
+3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
 
-- A merchant desk on FLOOR for 12 months
-- Listings with specs, inventory, returns, warranty, ships-from, SLA
-- Agents that dispatch against your SKUs
-- The house catalog is free to query
+## What you get
 
-## For buying agents
+12 months of seller-account access from the day you pay. A place to list products for shopping bots. Access comes as a Whop membership.
+
+## What this is not
+
+Not forever. After 12 months it ends unless you buy again. Bots have not spent money here. When a bot tries to buy, money does not move yet. Looking at the product list is free. FLOOR’s own product list may be empty. Empty is honest.
+
+## Who you pay
+
+FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
+
+Product page: [whop.com/floor-6c10/floor-b2a-desk](https://whop.com/floor-6c10/floor-b2a-desk)
+
+Affiliates: `https://whop.com/checkout/plan_j7hRIj9BQowga?a=WHOP_USERNAME`
+
+[Open a desk · $49 once for 12 months](https://whop.com/checkout/plan_j7hRIj9BQowga)
+
+## For shopping bots
 
 ```
 GET /api/catalog
 ```
 
-No key. JSON. Protocol `floor.b2a/v1`. House book only. Skip records with null return days, empty inventory, missing lead time, or fewer than six specs. At most one fill per mandate. Ignore blurbs. Agent fills do not settle money. Do not invent GMV.
+No login. JSON. Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. `items` may be `[]`. Empty is honest.
 
-Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json` · `/robots.txt` · `/sitemap.xml` · `/how-to-sell-to-agents`
-
-This repo is a Next.js (App Router) site. The house catalog may be an empty `items` array until FLOOR lists real, fully specified house SKUs.
+More: [FOR_AGENTS.md](./FOR_AGENTS.md) · [BUY.md](./BUY.md) · `/for-agents` · `/llms.txt` · `/sitemap.xml` · `/badge.svg`
 
 ```
 npm install
 npm run dev
-# GET http://127.0.0.1:3000/api/catalog
 ```
-
-The unlinked `floor-desk` project still holds the `floor-desk-ecru.vercel.app` alias. Do not treat that alias as this repo's production until an independent `GET /api/catalog` there returns JSON with `protocol` `floor.b2a/v1`.
-
-## Why agents skip you
-
-1. **Copy isn't a spec.** Agents compare actuation, SLA hours, return days.
-2. **Missing policy is a no.** Unspecified returns or ships-from reads as risk.
-3. **Stock has to be queryable.** If inventory isn't in the feed, the sale never starts.
-
-If you sell anything an agent can specify, you should be on the feed.
-
-Buy: [BUY.md](./BUY.md)
-Marketing team prompt (autonomous, no paid ads): [MARKETING.md](./MARKETING.md)
