@@ -28,7 +28,7 @@ export type CatalogResponse = {
 };
 
 /**
- * House catalog is empty until FLOOR lists real, fully specified house SKUs.
+ * House book only. Empty until FLOOR lists real, fully specified house SKUs.
  * Do not invent fill counts, GMV, or agent purchases. Agent fills do not settle money.
  */
 export const HOUSE_ITEMS: CatalogItem[] = [];

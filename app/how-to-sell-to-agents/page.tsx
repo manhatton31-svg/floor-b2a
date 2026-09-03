@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   DESK_CHECKOUT,
+  DESK_EXPIRATION_DAYS,
   DESK_PRODUCT,
   PROTOCOL,
   affiliateFromUnknown,
@@ -11,7 +12,7 @@ import { SiteFooter } from "../components/site-footer";
 export const metadata: Metadata = {
   title: "How to sell to agents — FLOOR",
   description:
-    "Agents query specs, stock, returns, and SLA. Incomplete records are skipped. Open a FLOOR desk for $49 once.",
+    "Agents query specs, stock, returns, and SLA. Incomplete records are skipped. Open a FLOOR desk for $49 once — 12 months of access.",
 };
 
 type PageProps = {
@@ -35,7 +36,7 @@ export default async function HowToSellPage({ searchParams }: PageProps) {
         They fetch JSON, drop anything without policy or stock, and fill one
         record per mandate — or they skip you.
       </p>
-      <p className="price">Desk · $49 once</p>
+      <p className="price">Desk · $49 once · 12 months</p>
       <div className="row">
         <a className="cta" href={checkout}>
           Open a desk · $49 once
@@ -50,7 +51,7 @@ export default async function HowToSellPage({ searchParams }: PageProps) {
         <h2>A spec sheet, not a blurb.</h2>
         <p>
           Protocol <code>{PROTOCOL}</code>. Public feed: <code>GET /api/catalog</code>.
-          No key. House catalog may be empty; empty is honest. Agent fills do
+          No key. House book only; empty is honest. Agent fills do
           not settle money.
         </p>
         <ul>
@@ -64,12 +65,14 @@ export default async function HowToSellPage({ searchParams }: PageProps) {
       </section>
 
       <section className="band">
-        <p className="kicker">Cash product</p>
+        <p className="kicker">Cash product · supplier FLOOR</p>
         <h2>Open a merchant desk.</h2>
         <p>
-          Humans pay <a href={checkout}>$49 once on Whop</a>. Affiliates append{" "}
-          <code>?a=WHOP_USERNAME</code> to{" "}
-          <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>. Product page:{" "}
+          Open a desk · $49 once for 12 months of merchant desk access
+          (<code>expiration_days</code> {DESK_EXPIRATION_DAYS}). One payment. Not a
+          subscription. FLOOR is the supplier. Whop processes the payment at{" "}
+          <a href={checkout}>{DESK_CHECKOUT}</a>. Affiliates append{" "}
+          <code>?a=WHOP_USERNAME</code>. Product page:{" "}
           <a href={DESK_PRODUCT}>{DESK_PRODUCT}</a>.
         </p>
         <div className="row">

@@ -26,15 +26,16 @@ Paid media is locked until he says desks are making money AND names a dollar cap
 
 ## Product
 FLOOR is a B2A commerce exchange. Agents buy on specs. Merchants list.
-Cash today: FLOOR desk, $49 once, humans (merchants), Whop.
-Agents fetch GET /api/catalog (floor.b2a/v1), skip incomplete records, fill or skip. Agent fills do not settle money yet. Do not invent GMV or agent charges.
-House catalog is free. Desk is the only paid SKU.
+Cash today: Open a desk · $49 once for 12 months of merchant desk access (expiration_days 365). One payment. Not a subscription. Humans (merchants). Supplier: FLOOR. Processor: Whop.
+Kernel lock: no permanent-access copy. One payment covers 12 months. Do not imply the desk outlasts that term.
+Agents fetch GET /api/catalog (floor.b2a/v1), skip incomplete records, fill or skip. Agent fills do not settle money. Do not invent GMV or agent charges.
+House book only. Desk is the only paid SKU.
 
 ## Rails
 - Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
 - Product: https://whop.com/floor-6c10/floor-b2a-desk
-- Landing: https://floor-desk-ecru.vercel.app
 - GitHub: https://github.com/manhatton31-svg/floor-b2a
+- Do not treat floor-desk-ecru.vercel.app as this repo's production until GET /api/catalog there returns JSON protocol floor.b2a/v1.
 - Affiliates: 30%. Checkout + ?a=WHOP_USERNAME
 - QA coupon FLOORQA is internal. Never publish it.
 
@@ -51,6 +52,6 @@ House catalog is free. Desk is the only paid SKU.
 10. Public answers on how to sell to agents.
 
 ## Voice
-Paper/ink, gray, compact, business. No purple, gold, emoji, guru. CTA always: Open a desk · $49 once.
+Paper/ink, gray, compact, business. No purple, gold, emoji, guru. CTA always: Open a desk · $49 once. Term: 12 months of merchant desk access. Do not imply access past that term.
 
 Start now. Create the bots. Do not wait for a meeting.

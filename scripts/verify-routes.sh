@@ -51,6 +51,12 @@ grep -q "/how-to-sell-to-agents" /tmp/floor-sitemap.xml
 echo "== GET /how-to-sell-to-agents =="
 curl -sS -o /tmp/floor-howto.html -w "status:%{http_code}\n" "$BASE/how-to-sell-to-agents"
 grep -q "Open a desk" /tmp/floor-howto.html
-! grep -q FLOORQA /tmp/floor-howto.html
+grep -q "12 months" /tmp/floor-howto.html
+! grep -qiE 'keep the desk|keep the seat|lifetime|forever access|FLOORQA' /tmp/floor-howto.html
+
+echo "== GET / =="
+curl -sS -o /tmp/floor-home.html -w "status:%{http_code}\n" "$BASE/"
+grep -q "Open a desk · \$49 once" /tmp/floor-home.html
+! grep -qiE 'keep the desk|keep the seat|lifetime|forever access|Pay \$49 · keep' /tmp/floor-home.html
 
 echo "All protocol routes verified against $BASE"

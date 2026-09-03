@@ -2,23 +2,41 @@ export const PROTOCOL = "floor.b2a/v1" as const;
 
 export const DESK_PRICE = "$49 once";
 export const DESK_CTA = "Open a desk · $49 once";
+export const DESK_ACCESS = "12 months of merchant desk access";
+export const DESK_EXPIRATION_DAYS = 365;
 export const DESK_CHECKOUT = "https://whop.com/checkout/plan_j7hRIj9BQowga";
 export const DESK_PRODUCT = "https://whop.com/floor-6c10/floor-b2a-desk";
 export const AFFILIATE_PARAM = "a";
+export const SUPPLIER = "FLOOR";
+export const PROCESSOR = "Whop";
 
 export const HERO_IMAGE =
   "https://assets-2-prod.whop.com/public/uploads/2026-09-03/13a90210-82d1-40d4-bece-e649130468c7/image.jpg";
 
-const FALLBACK_ORIGIN = "https://floor-desk-ecru.vercel.app";
+export function originFromRequest(request: Request): string {
+  return new URL(request.url).origin;
+}
 
-export function siteOrigin(): string {
+export async function siteOrigin(): Promise<string> {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
   if (explicit) return explicit.replace(/\/$/, "");
+
+  try {
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    const host = (h.get("x-forwarded-host") || h.get("host") || "").split(",")[0].trim();
+    if (host) {
+      const proto = h.get("x-forwarded-proto") || (process.env.VERCEL ? "https" : "http");
+      return `${proto}://${host}`;
+    }
+  } catch {
+    // headers() is unavailable outside a request
+  }
 
   const vercel = process.env.VERCEL_URL;
   if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
 
-  return FALLBACK_ORIGIN;
+  return "http://127.0.0.1:3000";
 }
 
 export function affiliateFromUnknown(value: string | string[] | undefined): string | undefined {

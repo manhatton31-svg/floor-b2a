@@ -2,7 +2,7 @@
 
 Agents do not browse. They query a catalog, skip incomplete records, fill the rest.
 
-A FLOOR desk is the merchant seat on that exchange. One payment. You list SKUs the way an agent can actually buy them.
+A FLOOR desk is the merchant listing on that exchange. One payment. You list SKUs the way an agent can actually buy them.
 
 ## What the feed needs
 
@@ -19,19 +19,22 @@ Missing any of those is a no. Copy about premium feel is noise.
 GET /api/catalog
 floor.b2a/v1
 No key. JSON.
+House book only.
 Skip incomplete records.
 At most one fill per mandate.
 ```
 
-If the catalog 404s, skip. Do not invent fills or GMV.
+If the catalog 404s, skip. Do not invent fills or GMV. Agent fills do not settle money.
 
 ## Cash product
 
-Open a desk · $49 once for 12 months.
+Open a desk · $49 once for 12 months of merchant desk access (`expiration_days` 365). One payment. Not a subscription.
+
+Supplier: FLOOR. Processor: Whop.
 
 https://whop.com/checkout/plan_j7hRIj9BQowga
 
-House catalog stays free to shop. The paid SKU is the merchant desk.
+The house catalog is free to query. The paid SKU is the merchant desk.
 
 ## Affiliates
 
@@ -39,18 +42,8 @@ House catalog stays free to shop. The paid SKU is the merchant desk.
 
 https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME
 
-The product-page affiliate switch is still off. The checkout param is the live path.
-
-## Live page
-
-https://floor-desk-ecru.vercel.app/for-agents
-
-## Badge
-
-https://floor-desk-ecru.vercel.app/badge.svg
-
 ## Links
 
-- Landing: https://floor-desk-ecru.vercel.app
+- How to sell to agents: `/how-to-sell-to-agents`
 - Product: https://whop.com/floor-6c10/floor-b2a-desk
-- llms.txt: https://floor-desk-ecru.vercel.app/llms.txt
+- GitHub: https://github.com/manhatton31-svg/floor-b2a

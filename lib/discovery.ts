@@ -1,26 +1,29 @@
 import {
   AFFILIATE_PARAM,
+  DESK_ACCESS,
   DESK_CHECKOUT,
   DESK_CTA,
+  DESK_EXPIRATION_DAYS,
   DESK_PRICE,
+  PROCESSOR,
   PROTOCOL,
   SKIP_RULES,
-  siteOrigin,
+  SUPPLIER,
 } from "./site";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+  "X-Floor-Protocol": PROTOCOL,
 } as const;
 
-export function llmsTxt(): string {
-  const origin = siteOrigin();
+export function llmsTxt(origin: string): string {
   return `# FLOOR
 
 > The exchange where agents buy. Protocol ${PROTOCOL}.
 
-FLOOR is a business-to-agent commerce desk. Agents do not browse. They query a catalog, discard incomplete records, and fill a SKU or skip it. Agent fills do not settle money. Do not invent GMV or agent purchases.
+FLOOR is a business-to-agent commerce desk. Agents do not browse. They query a catalog, discard incomplete records, and fill a SKU or skip it. Agent fills do not settle money. Do not invent GMV or agent purchases. The catalog is the house book only.
 
 ## Discover
 
@@ -35,11 +38,11 @@ FLOOR is a business-to-agent commerce desk. Agents do not browse. They query a c
 
 1. GET /api/catalog
 2. Confirm \`protocol\` is \`${PROTOCOL}\`
-3. Read \`items\`
+3. Read \`items\` (house book; may be empty)
 4. Apply skip rules before any fill
 5. At most one fill per mandate
 
-The house catalog may be empty. Empty is honest. Do not invent SKUs, fill counts, or GMV.
+Empty items is honest. Do not invent SKUs, fill counts, or GMV.
 
 ## Skip rules
 
@@ -57,7 +60,9 @@ At most one fill per mandate.
 
 ## Desk (humans)
 
-Cash product is unchanged: a merchant desk, ${DESK_PRICE}.
+${DESK_CTA} for ${DESK_ACCESS} (\`expiration_days\` ${DESK_EXPIRATION_DAYS}). One payment. Not a subscription.
+
+Supplier: ${SUPPLIER}. Processor: ${PROCESSOR}.
 
 CTA: ${DESK_CTA}
 Checkout: ${DESK_CHECKOUT}
@@ -67,13 +72,12 @@ Skip rules (short): ${SKIP_RULES.join("; ")}.
 `;
 }
 
-export function openApiYaml(): string {
-  const origin = siteOrigin();
+export function openApiYaml(origin: string): string {
   return `openapi: 3.1.0
 info:
   title: FLOOR catalog
   description: >
-    Public business-to-agent catalog. No authentication.
+    Public business-to-agent house book. No authentication.
     Protocol ${PROTOCOL}. Agent fills do not settle money.
     Do not invent GMV, fill counts, or agent purchases.
   version: "1.0.0"
@@ -82,7 +86,7 @@ servers:
 paths:
   /api/catalog:
     get:
-      summary: Fetch the FLOOR catalog
+      summary: Fetch the FLOOR house catalog
       operationId: getCatalog
       security: []
       responses:
@@ -107,12 +111,13 @@ components:
           format: date-time
         items:
           type: array
+          description: House book only. May be empty.
           items:
             $ref: "#/components/schemas/CatalogItem"
     CatalogItem:
       type: object
       description: >
-        House-owned SKUs must be fully specified. The live house catalog
+        House-owned SKUs must be fully specified. The live house book
         may be an empty array.
       required:
         - sku
@@ -168,12 +173,11 @@ components:
 `;
 }
 
-export function agentDiscovery() {
-  const origin = siteOrigin();
+export function agentDiscovery(origin: string) {
   return {
     name: "FLOOR",
     description:
-      "Business-to-agent commerce exchange. Agents query the catalog, skip incomplete records, and fill a SKU. Agent fills do not settle money.",
+      "Business-to-agent commerce exchange. Agents query the house catalog, skip incomplete records, and fill a SKU. Agent fills do not settle money.",
     protocol: PROTOCOL,
     version: "v1",
     authentication: "none",
@@ -181,6 +185,7 @@ export function agentDiscovery() {
       url: `${origin}/api/catalog`,
       method: "GET",
       content_type: "application/json",
+      book: "house",
     },
     openapi: `${origin}/openapi.yaml`,
     llms: `${origin}/llms.txt`,
@@ -189,9 +194,15 @@ export function agentDiscovery() {
       how_to_sell_to_agents: `${origin}/how-to-sell-to-agents`,
     },
     skip_rules: [...SKIP_RULES],
+    supplier: SUPPLIER,
+    processor: PROCESSOR,
     desk: {
       cta: DESK_CTA,
       price: DESK_PRICE,
+      access: DESK_ACCESS,
+      expiration_days: DESK_EXPIRATION_DAYS,
+      payment: "one_payment",
+      subscription: false,
       checkout: DESK_CHECKOUT,
       affiliate_query_param: AFFILIATE_PARAM,
     },

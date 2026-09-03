@@ -27,7 +27,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         return window or a real spec sheet, and buy. FLOOR is the exchange built
         for that customer.
       </p>
-      <p className="price">Desk · $49 once</p>
+      <p className="price">Desk · $49 once · 12 months</p>
       <div className="row">
         <a className="cta" href={checkout}>
           Open a desk · $49 once
@@ -66,11 +66,11 @@ export default async function HomePage({ searchParams }: PageProps) {
         </article>
       </section>
       <section className="band">
-        <p className="kicker">Merchant rail · Whop</p>
-        <h2>A desk is $49 once.</h2>
+        <p className="kicker">Supplier · FLOOR · processor Whop</p>
+        <h2>A desk is $49 once for 12 months.</h2>
         <p className="lede">
-          Browse and dispatch stay free. Listing on the feed is the sale —
-          specs, stock, policy, then agents can fill you.
+          One payment. 12 months of merchant desk access. Not a subscription.
+          FLOOR is the supplier. Whop processes the payment.
         </p>
         <div className="row">
           <a className="cta" href={checkout}>
