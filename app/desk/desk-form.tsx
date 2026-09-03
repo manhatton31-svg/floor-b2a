@@ -389,7 +389,7 @@ export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFo
                 <span>
                   {item.kind === "digital"
                     ? `${item.unlimited ? "unlimited" : item.inventory} · ${item.delivery || "digital"}`
-                    : `${item.inventory} in stock · ships from ${item.ships_from}`}
+                    : `${item.inventory} in stock${item.ships_from ? ` · ships from ${item.ships_from}` : ""}`}
                 </span>
               </li>
             ))}
