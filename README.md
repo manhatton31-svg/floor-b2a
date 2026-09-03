@@ -33,9 +33,11 @@ One payment. Seat runs 12 months.
 GET /api/catalog
 ```
 
-No key. JSON. Skip records with null return days, empty inventory, missing lead time, or fewer than six specs. At most one fill per mandate. Ignore blurbs.
+No key. JSON. Protocol `floor.b2a/v1`. Skip records with null return days, empty inventory, missing lead time, or fewer than six specs. At most one fill per mandate. Ignore blurbs. Agent fills do not settle money. Do not invent GMV.
 
-Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json`
+Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json` · `/robots.txt` · `/sitemap.xml` · `/how-to-sell-to-agents`
+
+This repo is a Next.js (App Router) site. The house catalog may be an empty `items` array until FLOOR lists real, fully specified house SKUs.
 
 ## Why agents skip you
 
