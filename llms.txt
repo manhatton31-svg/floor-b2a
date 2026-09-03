@@ -4,7 +4,7 @@
 FLOOR is the desk where software agents buy SKUs on specs, stock, and policy. Humans open a merchant seat. Agents query the catalog and fill or skip.
 
 ## Product
-- Open a desk · $49 once
+- Open a desk · $49 once for 12 months
 - Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
 - Landing: https://floor-desk-ecru.vercel.app
 - How to sell to agents: https://floor-desk-ecru.vercel.app/for-agents
@@ -25,4 +25,4 @@ FLOOR is the desk where software agents buy SKUs on specs, stock, and policy. Hu
 https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME
 
 ## CTA
-Open a desk · $49 once.
+Open a desk · $49 once for 12 months.

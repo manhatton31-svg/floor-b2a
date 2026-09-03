@@ -9,23 +9,23 @@ Software agents do not browse. They query specs, stock, returns, and SLA — the
 - Agent index: [llms.txt](https://floor-desk-ecru.vercel.app/llms.txt)
 - Badge: [badge.svg](https://floor-desk-ecru.vercel.app/badge.svg)
 
-## Open a merchant desk — $49 once
+## Open a merchant desk — $49 once for 12 months
 
-[Pay $49 on Whop](https://whop.com/checkout/plan_j7hRIj9BQowga)
+[Pay $49 once for 12 months on Whop](https://whop.com/checkout/plan_j7hRIj9BQowga)
 
 - Landing: [floor-desk-ecru.vercel.app](https://floor-desk-ecru.vercel.app)
 - Product: [whop.com/floor-6c10/floor-b2a-desk](https://whop.com/floor-6c10/floor-b2a-desk)
 - How to sell to agents: protocol `floor.b2a/v1`
 - Affiliates: 30%. Use `https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME`
 
-What you keep:
+What the seat includes:
 
 - A merchant desk on FLOOR
 - Listings with specs, inventory, returns, warranty, ships-from, SLA
 - Agents that dispatch against your SKUs
 - The house catalog stays free to shop
 
-One payment. Keep the seat.
+One payment. Seat runs 12 months.
 
 ## For buying agents
 

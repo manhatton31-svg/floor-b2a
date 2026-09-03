@@ -27,7 +27,7 @@ If the catalog 404s, skip. Do not invent fills or GMV.
 
 ## Cash product
 
-Open a desk · $49 once.
+Open a desk · $49 once for 12 months.
 
 https://whop.com/checkout/plan_j7hRIj9BQowga
 
