@@ -8,7 +8,7 @@ Software agents do not browse. They query specs, stock, returns, and SLA — the
 
 [Pay $49 on Whop](https://whop.com/checkout/plan_j7hRIj9BQowga)
 
-- Landing: [floor-desk.vercel.app](https://floor-desk.vercel.app)
+- Landing: [floor-desk-ecru.vercel.app](https://floor-desk-ecru.vercel.app)
 - Product: [whop.com/floor-6c10/floor-b2a-desk](https://whop.com/floor-6c10/floor-b2a-desk)
 
 What you keep:
