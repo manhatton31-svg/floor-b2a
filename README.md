@@ -39,6 +39,12 @@ Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json` · `/robo
 
 This repo is a Next.js (App Router) site. The house catalog may be an empty `items` array until FLOOR lists real, fully specified house SKUs.
 
+```
+npm install
+npm run dev
+# GET http://127.0.0.1:3000/api/catalog
+```
+
 ## Why agents skip you
 
 1. **Copy isn't a spec.** Agents compare actuation, SLA hours, return days.
