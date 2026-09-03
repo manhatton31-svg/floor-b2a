@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { DESK_CTA, DESK_PRODUCT, HERO_IMAGE } from "@/lib/site";
 import { SiteFooter } from "./site-footer";
 
@@ -5,10 +6,12 @@ export function Funnel({
   checkout,
   eyebrow,
   heading,
+  children,
 }: {
   checkout: string;
   eyebrow: string;
   heading: string;
+  children?: ReactNode;
 }) {
   return (
     <main className="wrap">
@@ -106,6 +109,8 @@ export function Funnel({
           </a>
         </div>
       </section>
+
+      {children}
 
       <SiteFooter />
     </main>

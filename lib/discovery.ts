@@ -1,3 +1,5 @@
+import { HOUSE_DESK_PAYTO } from "./catalog";
+import { USDC } from "./payment";
 import {
   DESK_CHECKOUT,
   DESK_CTA,
@@ -11,9 +13,34 @@ import {
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "X-Floor-Protocol": PROTOCOL,
+} as const;
+
+export const LISTING_POST_EXAMPLE = {
+  kind: "digital",
+  name: "Photo pack",
+  specs: [
+    { name: "Format", value: "JPEG" },
+    { name: "Count", value: "24 photos" },
+    { name: "Resolution", value: "4000 px" },
+    { name: "Color", value: "sRGB" },
+    { name: "License", value: "one buyer" },
+    { name: "Size", value: "120 MB" },
+  ],
+  inventory: "unlimited",
+  refund_days: 0,
+  warranty: "none",
+  delivery: "download",
+  lead_time: "instant",
+  payment: {
+    checkout_url: "https://pay.example.com/photos",
+    network: "base",
+    payTo: "0xYourPublicReceiveAddress",
+    price: "12.50",
+  },
+  owner: { name: "optional seller name" },
 } as const;
 
 export function llmsTxt(origin: string): string {
@@ -33,7 +60,7 @@ Checkout: ${DESK_CHECKOUT}
 
 ## How it works
 
-1. List your first product free at ${origin}/desk.
+1. List your first product free at ${origin}/desk or POST ${origin}/api/listings.
 2. A desk is $49 once, 12 months, if you want more listings.
 3. Bots read the list. They pay at the checkout link or x402 details on each listing. Incomplete listings get skipped.
 
@@ -53,15 +80,35 @@ List your first product free at ${origin}/desk. The desk is still $49 once for 1
 
 ## For machines
 
-1. GET /api/catalog
+1. GET /api/catalog or GET /api/listings
 2. Confirm \`protocol\` is \`${PROTOCOL}\`
-3. Read \`items\` (may be empty)
+3. Read \`items\` (includes payment.accepts when x402 is set)
 4. Skip if payment.checkout_url and payment.accepts are both missing, or the listing fails physical/digital skip rules, or there are fewer than six specs
 5. Pay at \`payment.checkout_url\` or via x402 \`payment.accepts\` (see https://x402.org/)
 6. GET /pay/{id} returns HTTP 402 with accepts when x402 is configured
-7. Ignore ad copy. FLOOR does not settle x402 or hold funds. Do not invent sales numbers
+7. To list: POST /api/listings as application/json. No login for the first complete listing. Send cookies back. Further listings return 402 unless a desk cookie/ack is present. This site cannot see the Whop payment.
+8. Ignore ad copy. FLOOR does not settle x402 or hold funds. Do not invent sales numbers
+
+### How an agent lists
+
+POST ${origin}/api/listings
+Content-Type: application/json
+CORS: *
+
+${JSON.stringify(LISTING_POST_EXAMPLE, null, 2)}
+
+First complete listing is free. Further listings: HTTP 402 with plain JSON. Open a desk · $49 once · 12 months. Checkout: ${DESK_CHECKOUT}
+
+Skip rules: ${SKIP_RULES.join("; ")}
+
+x402 public fields only: network (base or solana), payTo (receive address), price in US dollars. Never send a seed, private key, password, or Stripe sk_live.
+
+FLOOR house desk pays at ${DESK_CHECKOUT} and x402 $49 USDC:
+- Base payTo ${HOUSE_DESK_PAYTO.base} asset ${USDC.base.asset}
+- Solana payTo ${HOUSE_DESK_PAYTO.solana} asset ${USDC.solana.asset}
 
 Product list: ${origin}/api/catalog
+Listings: ${origin}/api/listings
 OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
 Seller account: ${origin}/desk
@@ -97,6 +144,57 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Catalog"
+  /api/listings:
+    get:
+      summary: Same public items as GET /api/catalog, including payment.accepts
+      operationId: getListings
+      security: []
+      responses:
+        "200":
+          description: Product list document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Catalog"
+    post:
+      summary: List a product. First complete listing is free. No login.
+      operationId: postListing
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingPost"
+            example:
+              kind: digital
+              name: Photo pack
+              specs:
+                - { name: Format, value: JPEG }
+                - { name: Count, value: "24 photos" }
+                - { name: Resolution, value: "4000 px" }
+                - { name: Color, value: sRGB }
+                - { name: License, value: one buyer }
+                - { name: Size, value: "120 MB" }
+              inventory: unlimited
+              refund_days: 0
+              warranty: none
+              delivery: download
+              lead_time: instant
+              payment:
+                checkout_url: https://pay.example.com/photos
+                network: base
+                payTo: 0xYourPublicReceiveAddress
+                price: "12.50"
+              owner:
+                name: optional seller name
+      responses:
+        "201":
+          description: Listed. Item is on GET /api/catalog and GET /api/listings.
+        "400":
+          description: Incomplete. Plain-English reason JSON.
+        "402":
+          description: Further listings need a desk. $49 once for 12 months.
 components:
   schemas:
     Catalog:
@@ -216,6 +314,53 @@ components:
         sla_hours:
           type: integer
           minimum: 0
+    ListingPost:
+      type: object
+      description: >
+        Same facts as the human desk form. title or name. return_days or refund_days.
+        payment.checkout_url and/or x402 network, payTo, price. Public fields only.
+      required: [kind, specs, inventory, warranty]
+      properties:
+        kind:
+          type: string
+          enum: [physical, digital]
+        title:
+          type: string
+        name:
+          type: string
+        specs:
+          type: array
+          minItems: 6
+        inventory: {}
+        return_days:
+          type: integer
+        refund_days:
+          type: integer
+        warranty:
+          type: string
+        ships_from:
+          type: string
+        lead_time:
+          type: string
+        delivery:
+          type: string
+        payment:
+          type: object
+          properties:
+            checkout_url:
+              type: string
+            network:
+              type: string
+              enum: [base, solana]
+            payTo:
+              type: string
+            price:
+              type: string
+        owner:
+          type: object
+          properties:
+            name:
+              type: string
 `;
 }
 
@@ -232,6 +377,15 @@ export function agentDiscovery(origin: string) {
       method: "GET",
       content_type: "application/json",
       book: "house",
+    },
+    listings: {
+      url: `${origin}/api/listings`,
+      methods: ["GET", "POST"],
+      content_type: "application/json",
+      cors: "*",
+      first_listing: "free",
+      further_listings: "402 unless desk cookie/ack is present",
+      example: LISTING_POST_EXAMPLE,
     },
     openapi: `${origin}/openapi.yaml`,
     llms: `${origin}/llms.txt`,
@@ -254,6 +408,20 @@ export function agentDiscovery(origin: string) {
       payment: "one_payment",
       subscription: false,
       checkout: DESK_CHECKOUT,
+      x402: [
+        {
+          network: "base",
+          payTo: HOUSE_DESK_PAYTO.base,
+          asset: USDC.base.asset,
+          price: "49",
+        },
+        {
+          network: "solana",
+          payTo: HOUSE_DESK_PAYTO.solana,
+          asset: USDC.solana.asset,
+          price: "49",
+        },
+      ],
     },
     settlement: "not_settled",
   };

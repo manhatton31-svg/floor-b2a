@@ -101,6 +101,35 @@ test("incomplete listings fail with skip-rule English", () => {
   assert.match(delivery.reason, /delivery method/);
 });
 
+test("agent JSON aliases match the human form", () => {
+  const result = validateListing({
+    kind: "digital",
+    name: "Agent photo pack",
+    specs: completeDigital.specs,
+    inventory: "unlimited",
+    refund_days: 0,
+    warranty: "none",
+    delivery_method: "download",
+    delivery_time: "instant",
+    payment: {
+      checkout_url: "https://pay.example.com/photos",
+      network: "base",
+      payTo: "0x000000000000000000000000000000000000dEaD",
+      price: 12.5,
+    },
+    owner: { name: "Ada" },
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.item.title, "Agent photo pack");
+  assert.equal(result.item.owner.name, "Ada");
+  assert.equal(result.item.owner.type, "desk");
+  assert.equal(result.item.delivery, "download");
+  assert.equal(result.item.payment.checkout_url, "https://pay.example.com/photos");
+  assert.equal(result.item.payment.accepts?.[0].maxAmountRequired, "12500000");
+  assert.equal(result.item.payment.accepts?.[0].payTo, "0x000000000000000000000000000000000000dEaD");
+});
+
 test("store writes appear on the catalog items array", () => {
   process.env.FLOOR_LISTINGS_FILE = "listings.test.json";
   mkdirSync(join(process.cwd(), "data"), { recursive: true });

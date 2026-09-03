@@ -8,19 +8,26 @@ const HYPE_PHRASE =
 
 export type ListingInput = {
   title?: unknown;
+  name?: unknown;
   kind?: unknown;
   specs?: unknown;
   inventory?: unknown;
   return_days?: unknown;
+  refund_days?: unknown;
   warranty?: unknown;
   ships_from?: unknown;
   lead_time?: unknown;
+  delivery_time?: unknown;
   checkout?: unknown;
   delivery?: unknown;
+  delivery_method?: unknown;
   payTo?: unknown;
   network?: unknown;
   x402_price?: unknown;
   resource?: unknown;
+  payment?: unknown;
+  owner?: unknown;
+  owner_name?: unknown;
 };
 
 export type ValidatedListing =
@@ -28,7 +35,36 @@ export type ValidatedListing =
   | { ok: false; reason: string };
 
 function asText(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/** Accept the human form body or the agent POST shape. */
+export function normalizeListingInput(raw: unknown): ListingInput {
+  const input = asRecord(raw) ?? {};
+  const payment = asRecord(input.payment) ?? {};
+  const x402 = asRecord(payment.x402) ?? payment;
+  const owner = asRecord(input.owner);
+  return {
+    ...input,
+    title: input.title ?? input.name,
+    return_days: input.return_days ?? input.refund_days,
+    lead_time: input.lead_time ?? input.delivery_time,
+    delivery: input.delivery ?? input.delivery_method,
+    checkout: input.checkout ?? payment.checkout_url ?? payment.checkout,
+    payTo: input.payTo ?? x402.payTo ?? payment.payTo,
+    network: input.network ?? x402.network ?? payment.network,
+    x402_price: input.x402_price ?? x402.price ?? payment.price ?? payment.x402_price,
+    resource: input.resource ?? x402.resource ?? payment.resource,
+    owner_name: asText(owner?.name ?? input.owner_name ?? input.owner),
+  };
 }
 
 function asInt(value: unknown): number | null {
@@ -122,7 +158,9 @@ function readInventory(
 }
 
 export function validateListing(input: ListingInput, existingIds: string[] = []): ValidatedListing {
-  const title = asText(input.title);
+  const body = normalizeListingInput(input);
+  const title = asText(body.title);
+  const ownerName = asText(body.owner_name) || "desk";
   if (title.length < 3) {
     return { ok: false, reason: "Give the product a real name." };
   }
@@ -135,17 +173,17 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     return { ok: false, reason: "That product name is already on the list." };
   }
 
-  const kind = readKind(input.kind);
+  const kind = readKind(body.kind);
   if (!kind) {
     return { ok: false, reason: "Say if it is a physical thing or a digital thing." };
   }
 
   const paid = buildPayment({
-    checkout: input.checkout,
-    payTo: input.payTo,
-    network: input.network,
-    price: input.x402_price,
-    resource: input.resource,
+    checkout: body.checkout,
+    payTo: body.payTo,
+    network: body.network,
+    price: body.x402_price,
+    resource: body.resource,
     id,
     title,
   });
@@ -153,7 +191,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     return { ok: false, reason: paid.reason };
   }
 
-  const specs = readSpecs(input.specs);
+  const specs = readSpecs(body.specs);
   if (!specs) {
     return {
       ok: false,
@@ -186,12 +224,12 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     };
   }
 
-  const stock = readInventory(input.inventory, kind);
+  const stock = readInventory(body.inventory, kind);
   if ("reason" in stock) {
     return { ok: false, reason: stock.reason };
   }
 
-  const returnDays = asInt(input.return_days);
+  const returnDays = asInt(body.return_days);
   if (returnDays === null) {
     return {
       ok: false,
@@ -211,7 +249,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     };
   }
 
-  const warranty = asText(input.warranty);
+  const warranty = asText(body.warranty);
   if (!warranty) {
     return {
       ok: false,
@@ -222,7 +260,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     };
   }
 
-  const leadTime = asText(input.lead_time);
+  const leadTime = asText(body.lead_time);
   if (!leadTime) {
     return {
       ok: false,
@@ -245,7 +283,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
   }
 
   if (kind === "digital") {
-    const delivery = asText(input.delivery);
+    const delivery = asText(body.delivery);
     if (!delivery) {
       return {
         ok: false,
@@ -260,7 +298,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
         sku: id,
         title,
         kind,
-        owner: { type: "desk", name: "desk" },
+        owner: { type: "desk", name: ownerName },
         specs,
         inventory: stock.inventory,
         unlimited: stock.unlimited || undefined,
@@ -275,7 +313,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     };
   }
 
-  const shipsFrom = asText(input.ships_from);
+  const shipsFrom = asText(body.ships_from);
   if (!shipsFrom) {
     return { ok: false, reason: "Say where it ships from, like a city or warehouse." };
   }
@@ -286,7 +324,7 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
       sku: id,
       title,
       kind,
-      owner: { type: "desk", name: "desk" },
+      owner: { type: "desk", name: ownerName },
       specs,
       inventory: stock.inventory,
       lead_time: leadTime,

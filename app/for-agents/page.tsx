@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { affiliateFromUnknown, deskCheckoutUrl } from "@/lib/site";
 import { Funnel } from "../components/funnel";
+import { AgentListDocs } from "./agent-list-docs";
 
 export const metadata: Metadata = {
   title: "FLOOR desk — $49 once for 12 months",
@@ -21,6 +22,8 @@ export default async function ForAgentsPage({ searchParams }: PageProps) {
       checkout={checkout}
       eyebrow="How to list for shopping bots"
       heading="Put real facts on the list."
-    />
+    >
+      <AgentListDocs />
+    </Funnel>
   );
 }

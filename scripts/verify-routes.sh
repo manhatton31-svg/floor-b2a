@@ -41,14 +41,20 @@ echo "== GET /llms.txt =="
 curl -sS -o /tmp/floor-llms.txt -w "status:%{http_code}\n" "$BASE/llms.txt"
 grep -q "$CTA" /tmp/floor-llms.txt
 grep -q "GET /api/catalog" /tmp/floor-llms.txt
+grep -q "POST" /tmp/floor-llms.txt
+grep -q "/api/listings" /tmp/floor-llms.txt
+grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-llms.txt
+grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-llms.txt
 grep -q "/desk" /tmp/floor-llms.txt
 ! grep -q FLOORQA /tmp/floor-llms.txt
 ! grep -q "?a=WHOP_USERNAME" /tmp/floor-llms.txt
 ! grep -qi "money does not move" /tmp/floor-llms.txt
+! grep -qiE "lifetime|gmv" /tmp/floor-llms.txt
 
 echo "== GET /openapi.yaml =="
 curl -sS -o /tmp/floor-openapi.yaml -w "status:%{http_code}\n" "$BASE/openapi.yaml"
 grep -q "/api/catalog" /tmp/floor-openapi.yaml
+grep -q "/api/listings" /tmp/floor-openapi.yaml
 grep -q "checkout" /tmp/floor-openapi.yaml
 
 echo "== GET /.well-known/agent.json =="
@@ -60,7 +66,14 @@ body = json.loads(Path("/tmp/floor-agent.json").read_text())
 assert body["protocol"] == "floor.b2a/v1"
 assert body["settlement"] == "not_settled"
 assert "/api/catalog" in body["catalog"]["url"]
+assert "/api/listings" in body["listings"]["url"]
+assert "POST" in body["listings"]["methods"]
+assert body["desk"]["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
+assert body["desk"]["x402"][0]["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
+assert body["desk"]["x402"][1]["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
 assert "/desk" in body["human"]["desk"]
+assert "gmv" not in body
+assert "FLOORQA" not in json.dumps(body)
 PY
 
 echo "== GET /robots.txt =="
@@ -70,6 +83,7 @@ grep -q "sitemap" /tmp/floor-robots.txt
 echo "== GET /sitemap.xml =="
 curl -sS -o /tmp/floor-sitemap.xml -w "status:%{http_code}\n" "$BASE/sitemap.xml"
 grep -q "/api/catalog" /tmp/floor-sitemap.xml
+grep -q "/api/listings" /tmp/floor-sitemap.xml
 grep -q "/for-agents" /tmp/floor-sitemap.xml
 grep -q "/desk" /tmp/floor-sitemap.xml
 grep -q "/tape" /tmp/floor-sitemap.xml
@@ -83,7 +97,12 @@ echo "== GET /for-agents =="
 code=$(curl -sS -o /tmp/floor-for.html -w "%{http_code}" "$BASE/for-agents")
 test "$code" = "200"
 grep -q "$CTA" /tmp/floor-for.html
+grep -q "How an agent lists" /tmp/floor-for.html
+grep -q "POST /api/listings" /tmp/floor-for.html
+grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-for.html
+grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-for.html
 ! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA|money does not move" /tmp/floor-for.html
+! grep -qi gmv /tmp/floor-for.html
 
 echo "== GET /how-to-sell-to-agents =="
 code=$(curl -sS -o /tmp/floor-howto.html -w "%{http_code}" "$BASE/how-to-sell-to-agents")
@@ -172,6 +191,36 @@ from pathlib import Path
 body = json.loads(Path("/tmp/floor-listing-denied.json").read_text())
 assert body["ok"] is False
 assert "pay" in body["reason"].lower() or "name" in body["reason"].lower()
+assert "gmv" not in body
+PY
+
+echo "== agent POST digital listing is 201 on catalog and listings =="
+AGENT_TITLE="Agent photos ${RANDOM}"
+code=$(curl -sS -D /tmp/floor-agent-list.hdr -o /tmp/floor-agent-list.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d "{\"kind\":\"digital\",\"name\":\"$AGENT_TITLE\",\"specs\":$DIGITAL_SPECS,\"inventory\":\"unlimited\",\"refund_days\":0,\"warranty\":\"none\",\"delivery\":\"download\",\"lead_time\":\"instant\",\"payment\":{\"checkout_url\":\"https://pay.example.com/photos\",\"network\":\"base\",\"payTo\":\"0x000000000000000000000000000000000000dEaD\",\"price\":\"12.50\"},\"owner\":{\"name\":\"Ada\"}}" \
+  "$BASE/api/listings")
+test "$code" = "201"
+grep -i '^access-control-allow-origin: \*' /tmp/floor-agent-list.hdr
+curl -sS -o /tmp/floor-catalog-agent.json "$BASE/api/catalog"
+curl -sS -D /tmp/floor-listings-get.hdr -o /tmp/floor-listings-get.json "$BASE/api/listings"
+grep -i '^access-control-allow-origin: \*' /tmp/floor-listings-get.hdr
+AGENT_TITLE="$AGENT_TITLE" python3 - <<'PY'
+import json, os
+from pathlib import Path
+title = os.environ["AGENT_TITLE"]
+posted = json.loads(Path("/tmp/floor-agent-list.json").read_text())
+assert posted["ok"] is True
+assert posted["item"]["kind"] == "digital"
+assert posted["item"]["owner"]["name"] == "Ada"
+assert posted["item"]["payment"]["accepts"][0]["payTo"].endswith("dEaD")
+assert posted["settlement"] == "not_settled"
+catalog = json.loads(Path("/tmp/floor-catalog-agent.json").read_text())
+listings = json.loads(Path("/tmp/floor-listings-get.json").read_text())
+assert catalog["protocol"] == listings["protocol"] == "floor.b2a/v1"
+assert any(item["title"] == title and item.get("payment", {}).get("accepts") for item in catalog["items"])
+assert any(item["title"] == title and item.get("payment", {}).get("accepts") for item in listings["items"])
+assert "gmv" not in catalog and "gmv" not in listings
 PY
 
 echo "== free first listing is accepted =="
@@ -182,7 +231,7 @@ code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-ok.json -w "%{http_cod
   -H "Content-Type: application/json" \
   -d "{\"title\":\"$TITLE\",\"kind\":\"physical\",\"checkout\":\"https://pay.example.com/mug\",\"specs\":$SPECS,\"inventory\":20,\"return_days\":30,\"warranty\":\"1 year\",\"ships_from\":\"Austin, TX\",\"lead_time\":\"2 days\"}" \
   "$BASE/api/listings")
-test "$code" = "200"
+test "$code" = "201"
 curl -sS -o /tmp/floor-catalog-after.json "$BASE/api/catalog"
 TITLE="$TITLE" python3 - <<'PY'
 import json, os
@@ -203,13 +252,16 @@ code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-second.json -w "%{http
   -H "Content-Type: application/json" \
   -d "{\"title\":\"Second mug ${RANDOM}\",\"kind\":\"physical\",\"checkout\":\"https://pay.example.com/mug2\",\"specs\":$SPECS,\"inventory\":4,\"return_days\":30,\"warranty\":\"none\",\"ships_from\":\"Austin\",\"lead_time\":\"2 days\"}" \
   "$BASE/api/listings")
-test "$code" = "401"
+test "$code" = "402"
 python3 - <<'PY'
 import json
 from pathlib import Path
 body = json.loads(Path("/tmp/floor-listing-second.json").read_text())
 assert body["ok"] is False
 assert "desk" in body["reason"].lower()
+assert body["desk"]["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
+assert "12 months" in body["reason"]
+assert "gmv" not in body
 PY
 
 echo "== digital listing after desk ack =="
@@ -219,7 +271,7 @@ code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-digital.json -w "%{htt
   -H "Content-Type: application/json" \
   -d "{\"title\":\"$DTITLE\",\"kind\":\"digital\",\"checkout\":\"https://pay.example.com/photos\",\"payTo\":\"0x000000000000000000000000000000000000dEaD\",\"network\":\"base\",\"x402_price\":\"12.50\",\"delivery\":\"download\",\"specs\":$DIGITAL_SPECS,\"inventory\":\"unlimited\",\"return_days\":0,\"warranty\":\"none\",\"lead_time\":\"instant\"}" \
   "$BASE/api/listings")
-test "$code" = "200"
+test "$code" = "201"
 curl -sS -o /tmp/floor-catalog-digital.json "$BASE/api/catalog"
 DTITLE="$DTITLE" python3 - <<'PY'
 import json, os
