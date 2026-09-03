@@ -255,6 +255,28 @@ button.ghost {
   padding: 0;
 }
 
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.choices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.choices input {
+  width: auto;
+  margin: 0;
+}
+
 .field .hint {
   display: block;
   color: var(--muted);
@@ -263,7 +285,8 @@ button.ghost {
   margin-top: 6px;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   background: var(--bg);
   color: var(--fg);

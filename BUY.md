@@ -10,8 +10,8 @@ https://whop.com/checkout/plan_j7hRIj9BQowga
 
 ## How it works
 
-1. Open a seller account. $49 once, 12 months.
-2. List a product on `/desk` with specs, stock, return days, warranty, ship-from, and shipping time.
+1. List your first product free on `/desk`.
+2. A desk is $49 once, 12 months, if you want more listings.
 3. Bots read the list.
 
 ## What you get
@@ -20,7 +20,7 @@ https://whop.com/checkout/plan_j7hRIj9BQowga
 
 ## What this is not
 
-Not forever. After 12 months it ends unless you buy again. Bots have not spent money here. When a bot tries to buy, money does not move yet.
+Not forever. After 12 months it ends unless you buy again. The bot pays at the listing’s checkout link. The $49 desk checkout is live. Other products pay at the URL the seller entered. FLOOR does not mark those sales as settled.
 
 ## Who you pay
 
@@ -28,7 +28,7 @@ FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
 Product page: https://whop.com/floor-6c10/floor-b2a-desk
 
-After you pay, list a product at `/desk`.
+List your first product free at `/desk`. The desk is still $49 once for 12 months.
 
 Open a desk · $49 once · 12 months
 https://whop.com/checkout/plan_j7hRIj9BQowga

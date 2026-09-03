@@ -28,7 +28,7 @@ Paid media is locked until he says desks are making money AND names a dollar cap
 FLOOR is a store for shopping bots. Businesses list products. Bots read the list.
 Cash today: Open a desk · $49 once · 12 months. Humans buy a seller account. FLOOR (Christopher Hatton) is the seller. Whop only takes the payment.
 One payment. 12 months. Not forever. After 12 months it ends unless they buy again.
-Shopping bots read GET /api/catalog (field protocol is floor.b2a/v1). When a bot tries to buy, money does not move yet. Do not invent sales numbers.
+Shopping bots read GET /api/catalog (field protocol is floor.b2a/v1). The bot pays at the listing’s checkout link. The $49 desk checkout is live. Do not invent sales numbers.
 FLOOR’s own product list may be empty. Empty is honest. The paid thing is the seller account.
 
 ## Rails
@@ -36,7 +36,7 @@ FLOOR’s own product list may be empty. Empty is honest. The paid thing is the 
 - Product: https://whop.com/floor-6c10/floor-b2a-desk
 - GitHub: https://github.com/manhatton31-svg/floor-b2a
 - Do not treat floor-desk-ecru.vercel.app as this repo's production until GET /api/catalog there returns JSON protocol floor.b2a/v1.
-- After someone pays, they list a product at /desk. Do not publish any coupon. Do not present ?a= as live.
+- List your first product free at /desk. The desk is still $49 once for 12 months. Do not publish any coupon. Do not publish FLOORQA. Do not present ?a= as live.
 
 ## Always-on playbook
 1. Machine files live next to the product list.

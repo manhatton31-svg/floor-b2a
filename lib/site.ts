@@ -55,9 +55,10 @@ export function deskCheckoutUrl(affiliate?: string): string {
 }
 
 export const SKIP_RULES = [
-  "null or missing return_days",
-  "empty or missing inventory",
-  "missing lead_time",
+  "missing payment: https checkout URL and/or public x402 accept",
+  "physical: missing return_days, inventory, lead_time, or ships-from",
+  "digital: missing how the buyer gets it, refund days, or delivery time",
+  "digital: unlimited inventory is allowed",
   "fewer than six specs",
   "at most one buy per job",
   "ignore marketing blurbs",
@@ -66,6 +67,8 @@ export const SKIP_RULES = [
 export const PUBLIC_PATHS = [
   "/",
   "/desk",
+  "/tape",
+  "/directories",
   "/for-agents",
   "/how-to-sell-to-agents",
   "/api/catalog",

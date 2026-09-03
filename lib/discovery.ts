@@ -33,9 +33,9 @@ Checkout: ${DESK_CHECKOUT}
 
 ## How it works
 
-1. Open a seller account. $49 once, 12 months.
-2. List a product with specs, stock, return days, warranty, ship-from, and shipping time.
-3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
+1. List your first product free at ${origin}/desk.
+2. A desk is $49 once, 12 months, if you want more listings.
+3. Bots read the list. They pay at the checkout link or x402 details on each listing. Incomplete listings get skipped.
 
 ## What you get
 
@@ -43,26 +43,29 @@ Checkout: ${DESK_CHECKOUT}
 
 ## What this is not
 
-Not forever. After 12 months it ends unless you buy again. Bots have not spent money here. When a bot tries to buy, money does not move yet. Looking at the product list is free. FLOOR’s own product list may be empty. Empty is honest.
+Not forever. After 12 months it ends unless you buy again. The bot pays at the listing’s checkout link or x402 details. The $49 desk checkout is live. FLOOR does not settle x402 or hold funds. Looking at the product list is free.
 
 ## Who you pay
 
 FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
-People list products at ${origin}/desk after they pay.
+List your first product free at ${origin}/desk. The desk is still $49 once for 12 months.
 
 ## For machines
 
 1. GET /api/catalog
 2. Confirm \`protocol\` is \`${PROTOCOL}\`
 3. Read \`items\` (may be empty)
-4. Skip if return_days is missing, inventory is empty, lead_time is missing, or there are fewer than six specs
-5. Ignore ad copy
+4. Skip if payment.checkout_url and payment.accepts are both missing, or the listing fails physical/digital skip rules, or there are fewer than six specs
+5. Pay at \`payment.checkout_url\` or via x402 \`payment.accepts\` (see https://x402.org/)
+6. GET /pay/{id} returns HTTP 402 with accepts when x402 is configured
+7. Ignore ad copy. FLOOR does not settle x402 or hold funds. Do not invent sales numbers
 
 Product list: ${origin}/api/catalog
 OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
 Seller account: ${origin}/desk
+Tape: ${origin}/tape
 How to list: ${origin}/for-agents
 Badge: ${origin}/badge.svg
 Sitemap: ${origin}/sitemap.xml
@@ -76,7 +79,8 @@ info:
   description: >
     Public product list for shopping bots. No login.
     Field protocol is ${PROTOCOL}. settlement is not_settled.
-    When a bot tries to buy, money does not move yet.
+    The bot pays at payment.checkout_url or payment.accepts (x402).
+    FLOOR does not settle x402 or hold funds.
   version: "1.0.0"
 servers:
   - url: ${origin}
@@ -108,7 +112,7 @@ components:
           format: date-time
         items:
           type: array
-          description: Public products. May be empty. Empty is honest.
+          description: Public products. May include the FLOOR desk. Extra items come from sellers.
           items:
             $ref: "#/components/schemas/CatalogItem"
         settlement:
@@ -120,19 +124,23 @@ components:
       required:
         - sku
         - title
+        - kind
         - owner
         - specs
         - inventory
         - lead_time
         - return_days
         - warranty
-        - ships_from
+        - payment
         - sla_hours
       properties:
         sku:
           type: string
         title:
           type: string
+        kind:
+          type: string
+          enum: [physical, digital]
         owner:
           type: object
           required: [type, name]
@@ -156,6 +164,8 @@ components:
         inventory:
           type: integer
           minimum: 0
+        unlimited:
+          type: boolean
         lead_time:
           type: string
         return_days:
@@ -163,7 +173,45 @@ components:
           minimum: 0
         warranty:
           type: string
+        checkout:
+          type: string
+          format: uri
+        payment:
+          type: object
+          description: checkout_url and/or x402 accepts. Public fields only.
+          properties:
+            checkout_url:
+              type: string
+              format: uri
+            accepts:
+              type: array
+              items:
+                type: object
+                required: [scheme, network, maxAmountRequired, asset, payTo, resource, description]
+                properties:
+                  scheme:
+                    type: string
+                    const: exact
+                  network:
+                    type: string
+                    enum: [base, solana]
+                  maxAmountRequired:
+                    type: string
+                  asset:
+                    type: string
+                  payTo:
+                    type: string
+                  resource:
+                    type: string
+                  description:
+                    type: string
         ships_from:
+          type: string
+        delivery:
+          type: string
+        price:
+          type: string
+        refund:
           type: string
         sla_hours:
           type: integer
@@ -175,7 +223,7 @@ export function agentDiscovery(origin: string) {
   return {
     name: "FLOOR",
     description:
-      "Store for shopping bots. Bots read a product list. Missing returns, stock, or real specs means skip. When a bot tries to buy, money does not move yet.",
+      "Store for shopping bots. Bots read a product list. Missing payment, returns, stock, or real specs means skip. The bot pays at checkout_url or x402 accepts.",
     protocol: PROTOCOL,
     version: "v1",
     authentication: "none",
@@ -191,6 +239,8 @@ export function agentDiscovery(origin: string) {
     human: {
       home: `${origin}/`,
       desk: `${origin}/desk`,
+      tape: `${origin}/tape`,
+      pay: `${origin}/pay/{id}`,
       for_agents: `${origin}/for-agents`,
     },
     skip_rules: [...SKIP_RULES],

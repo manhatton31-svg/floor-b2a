@@ -28,8 +28,8 @@ export function Funnel({
         </a>
       </div>
       <p className="lede">
-        Already paid? <a href="/desk">List a product</a>. That is the seller
-        account, not a second pitch.
+        List your first product free. Then a desk is $49 once for 12 months if
+        you want more listings. <a href="/desk">List a product</a>.
       </p>
 
       <figure className="hero">
@@ -44,21 +44,26 @@ export function Funnel({
         <article className="card">
           <p className="num">01</p>
           <h3>Open a seller account</h3>
-          <p>$49 once, 12 months. That account is the desk.</p>
+          <p>$49 once, 12 months. That account is the desk. Not free.</p>
         </article>
         <article className="card">
           <p className="num">02</p>
           <h3>List a product</h3>
           <p>
-            Add specs, stock, return days, warranty, ship-from, and shipping
-            time on the <a href="/desk">seller account page</a>. Marketing talk
-            does not count.
+            List your first product free on the{" "}
+            <a href="/desk">seller account page</a>. Add a checkout link and/or
+            a public x402 wallet, plus the facts bots need. Physical things
+            need stock and a ship-from. Digital things need how the buyer gets
+            them. Marketing talk does not count.
           </p>
         </article>
         <article className="card">
           <p className="num">03</p>
           <h3>Bots read the list</h3>
-          <p>Complete listings can be bought. Incomplete listings get skipped.</p>
+          <p>
+            Complete listings can be bought at the checkout link or x402
+            details on the listing. Incomplete listings get skipped.
+          </p>
         </article>
       </section>
 
@@ -66,20 +71,22 @@ export function Funnel({
         <p className="kicker">What you get</p>
         <h2>A seller account for 12 months.</h2>
         <p className="lede">
-          You get 12 months of seller-account access from the day you pay. A
-          place to list products for shopping bots. Access comes as a Whop
-          membership. After you pay, list the product on the{" "}
-          <a href="/desk">seller account page</a>.
+          You get 12 months of seller-account access from the day you pay. More
+          listings and ongoing access. Access comes as a Whop membership. The
+          first complete product is free on the{" "}
+          <a href="/desk">seller account page</a>. The desk is still $49.
         </p>
       </section>
 
       <section className="band">
         <p className="kicker">What it is not</p>
-        <h2>Not forever. Money does not move yet.</h2>
+        <h2>Not forever. The bot pays at checkout.</h2>
         <p className="lede">
-          After 12 months it ends unless you buy again. Looking at the product
-          list is free. Bots have not spent money here. When a bot tries to
-          buy, money does not move yet.
+          After 12 months it ends unless you buy again. The first listing is
+          free. That is not a coupon and the desk is not $0. The $49 desk
+          checkout is live. Other products pay at the checkout link or x402
+          wallet the seller entered. FLOOR does not settle those payments or
+          hold funds.
         </p>
       </section>
 

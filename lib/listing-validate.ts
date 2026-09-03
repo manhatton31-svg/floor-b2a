@@ -1,4 +1,5 @@
-import type { CatalogItem, CatalogSpec } from "./catalog";
+import type { CatalogItem, CatalogSpec, ProductKind } from "./catalog";
+import { buildPayment } from "./payment.ts";
 
 const HYPE_VALUE =
   /^(premium|quality|perfect|best|amazing|luxury|exclusive|professional|ready|high[- ]quality|top[- ]quality|the best|great quality)$/i;
@@ -7,12 +8,19 @@ const HYPE_PHRASE =
 
 export type ListingInput = {
   title?: unknown;
+  kind?: unknown;
   specs?: unknown;
   inventory?: unknown;
   return_days?: unknown;
   warranty?: unknown;
   ships_from?: unknown;
   lead_time?: unknown;
+  checkout?: unknown;
+  delivery?: unknown;
+  payTo?: unknown;
+  network?: unknown;
+  x402_price?: unknown;
+  resource?: unknown;
 };
 
 export type ValidatedListing =
@@ -40,6 +48,7 @@ export function slugFromTitle(title: string): string {
 export function parseSlaHours(text: string): number | null {
   const t = text.trim().toLowerCase();
   if (!t) return null;
+  if (/^(instant|immediately|immediate|now)$/.test(t)) return 0;
   const hours = t.match(/(\d+(?:\.\d+)?)\s*(hours?|hrs?|h)\b/);
   if (hours) return Math.max(0, Math.round(Number(hours[1])));
   const days = t.match(/(\d+(?:\.\d+)?)\s*(days?|d)\b/);
@@ -50,6 +59,18 @@ export function parseSlaHours(text: string): number | null {
   const first = t.match(/(\d+)/);
   if (first) return Math.max(0, Number(first[1]) * 24);
   return null;
+}
+
+export function parseCheckout(value: unknown): string | null {
+  const raw = asText(value);
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return null;
+    if (!url.hostname.includes(".")) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 function isMarketingSpec(spec: CatalogSpec): boolean {
@@ -73,6 +94,41 @@ function readSpecs(raw: unknown): CatalogSpec[] | null {
   return specs;
 }
 
+function readKind(value: unknown): ProductKind | null {
+  const kind = asText(value).toLowerCase();
+  if (!kind || kind === "physical") return "physical";
+  if (kind === "digital") return "digital";
+  return null;
+}
+
+function readInventory(
+  value: unknown,
+  kind: ProductKind,
+): { inventory: number; unlimited: boolean } | { reason: string } {
+  const text = asText(value).toLowerCase();
+  if (kind === "digital" && /^(unlimited|no limit|none)$/.test(text)) {
+    return { inventory: 0, unlimited: true };
+  }
+  const inventory = asInt(value);
+  if (inventory === null) {
+    return {
+      reason:
+        kind === "digital"
+          ? "Say how many you can sell, as a number, or write unlimited."
+          : "Bots skip listings with no stock. Enter how many you have, as a number.",
+    };
+  }
+  if (kind === "physical" && inventory <= 0) {
+    return {
+      reason: "Bots skip listings with no stock. Enter how many you have. Zero does not count.",
+    };
+  }
+  if (kind === "digital" && inventory < 0) {
+    return { reason: "Inventory cannot be negative. Use a number or write unlimited." };
+  }
+  return { inventory, unlimited: false };
+}
+
 export function validateListing(input: ListingInput, existingIds: string[] = []): ValidatedListing {
   const title = asText(input.title);
   if (title.length < 3) {
@@ -85,6 +141,24 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
   }
   if (existingIds.includes(id)) {
     return { ok: false, reason: "That product name is already on the list." };
+  }
+
+  const kind = readKind(input.kind);
+  if (!kind) {
+    return { ok: false, reason: "Say if it is a physical thing or a digital thing." };
+  }
+
+  const paid = buildPayment({
+    checkout: input.checkout,
+    payTo: input.payTo,
+    network: input.network,
+    price: input.x402_price,
+    resource: input.resource,
+    id,
+    title,
+  });
+  if (!paid.ok) {
+    return { ok: false, reason: paid.reason };
   }
 
   const specs = readSpecs(input.specs);
@@ -120,49 +194,50 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     };
   }
 
-  const inventory = asInt(input.inventory);
-  if (inventory === null) {
-    return {
-      ok: false,
-      reason: "Bots skip listings with no stock. Enter how many you have, as a number.",
-    };
-  }
-  if (inventory <= 0) {
-    return {
-      ok: false,
-      reason: "Bots skip listings with no stock. Enter how many you have. Zero does not count.",
-    };
+  const stock = readInventory(input.inventory, kind);
+  if ("reason" in stock) {
+    return { ok: false, reason: stock.reason };
   }
 
   const returnDays = asInt(input.return_days);
   if (returnDays === null) {
     return {
       ok: false,
-      reason: "Bots skip listings with no return days. Enter a number. Use 0 if you do not take returns.",
+      reason:
+        kind === "digital"
+          ? "Bots skip listings with no refund days. Enter a number. Use 0 if you do not give refunds."
+          : "Bots skip listings with no return days. Enter a number. Use 0 if you do not take returns.",
     };
   }
   if (returnDays < 0) {
     return {
       ok: false,
-      reason: "Return days cannot be negative. Enter a number. Use 0 if you do not take returns.",
+      reason:
+        kind === "digital"
+          ? "Refund days cannot be negative. Enter a number. Use 0 if you do not give refunds."
+          : "Return days cannot be negative. Enter a number. Use 0 if you do not take returns.",
     };
   }
 
   const warranty = asText(input.warranty);
   if (!warranty) {
-    return { ok: false, reason: "Say what the warranty is. If there is none, write none." };
-  }
-
-  const shipsFrom = asText(input.ships_from);
-  if (!shipsFrom) {
-    return { ok: false, reason: "Say where it ships from, like a city or warehouse." };
+    return {
+      ok: false,
+      reason:
+        kind === "digital"
+          ? "Say what the warranty is. If there is none, write none. If access lasts 12 months, write that."
+          : "Say what the warranty is. If there is none, write none.",
+    };
   }
 
   const leadTime = asText(input.lead_time);
   if (!leadTime) {
     return {
       ok: false,
-      reason: "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
+      reason:
+        kind === "digital"
+          ? "Bots skip listings with no delivery time. Say how long until they get it. Instant is allowed."
+          : "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
     };
   }
 
@@ -170,8 +245,47 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
   if (slaHours === null) {
     return {
       ok: false,
-      reason: "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
+      reason:
+        kind === "digital"
+          ? "Bots skip listings with no delivery time. Say how long until they get it, like instant or 1 hour."
+          : "Bots skip listings with no shipping time. Say how long until it ships, like 48 hours or 2 days.",
     };
+  }
+
+  if (kind === "digital") {
+    const delivery = asText(input.delivery);
+    if (!delivery) {
+      return {
+        ok: false,
+        reason:
+          "Bots skip digital listings with no delivery method. Say how they get it: account access, download, email, or login.",
+      };
+    }
+
+    return {
+      ok: true,
+      item: {
+        sku: id,
+        title,
+        kind,
+        owner: { type: "desk", name: "desk" },
+        specs,
+        inventory: stock.inventory,
+        unlimited: stock.unlimited || undefined,
+        lead_time: leadTime,
+        return_days: returnDays,
+        warranty,
+        payment: paid.payment,
+        checkout: paid.checkout,
+        sla_hours: slaHours,
+        delivery,
+      },
+    };
+  }
+
+  const shipsFrom = asText(input.ships_from);
+  if (!shipsFrom) {
+    return { ok: false, reason: "Say where it ships from, like a city or warehouse." };
   }
 
   return {
@@ -179,14 +293,17 @@ export function validateListing(input: ListingInput, existingIds: string[] = [])
     item: {
       sku: id,
       title,
+      kind,
       owner: { type: "desk", name: "desk" },
       specs,
-      inventory,
+      inventory: stock.inventory,
       lead_time: leadTime,
       return_days: returnDays,
       warranty,
-      ships_from: shipsFrom,
+      payment: paid.payment,
+      checkout: paid.checkout,
       sla_hours: slaHours,
+      ships_from: shipsFrom,
     },
   };
 }

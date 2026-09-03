@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import type { CatalogItem, CatalogSpec } from "@/lib/catalog";
+import type { CatalogItem, CatalogSpec, ProductKind } from "@/lib/catalog";
+import { DESK_CHECKOUT, DESK_CTA } from "@/lib/site";
 
 const EMPTY_SPECS: CatalogSpec[] = Array.from({ length: 6 }, () => ({
   name: "",
@@ -10,10 +11,18 @@ const EMPTY_SPECS: CatalogSpec[] = Array.from({ length: 6 }, () => ({
 
 type DeskFormProps = {
   initialItems: CatalogItem[];
+  paid?: boolean;
+  showForm?: boolean;
 };
 
-export function DeskForm({ initialItems }: DeskFormProps) {
+export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFormProps) {
   const [title, setTitle] = useState("");
+  const [kind, setKind] = useState<ProductKind>("physical");
+  const [checkout, setCheckout] = useState("");
+  const [payTo, setPayTo] = useState("");
+  const [network, setNetwork] = useState("");
+  const [x402Price, setX402Price] = useState("");
+  const [delivery, setDelivery] = useState("");
   const [specs, setSpecs] = useState<CatalogSpec[]>(EMPTY_SPECS);
   const [inventory, setInventory] = useState("");
   const [returnDays, setReturnDays] = useState("");
@@ -24,6 +33,8 @@ export function DeskForm({ initialItems }: DeskFormProps) {
   const [listed, setListed] = useState<CatalogItem | null>(null);
   const [items, setItems] = useState<CatalogItem[]>(initialItems);
   const [busy, setBusy] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const formOpen = showForm && !locked;
 
   const listedTitle = listed?.title;
 
@@ -36,6 +47,12 @@ export function DeskForm({ initialItems }: DeskFormProps) {
   const body = useMemo(
     () => ({
       title,
+      kind,
+      checkout,
+      payTo,
+      network,
+      x402_price: x402Price,
+      delivery,
       specs,
       inventory,
       return_days: returnDays,
@@ -43,7 +60,7 @@ export function DeskForm({ initialItems }: DeskFormProps) {
       ships_from: shipsFrom,
       lead_time: leadTime,
     }),
-    [title, specs, inventory, returnDays, warranty, shipsFrom, leadTime],
+    [title, kind, checkout, payTo, network, x402Price, delivery, specs, inventory, returnDays, warranty, shipsFrom, leadTime],
   );
 
   async function onSubmit(event: FormEvent) {
@@ -62,12 +79,14 @@ export function DeskForm({ initialItems }: DeskFormProps) {
         ok?: boolean;
         reason?: string;
         item?: CatalogItem;
+        next?: "desk" | "list";
       };
       if (!res.ok || !data.ok || !data.item) {
         setReason(data.reason || "The listing was not complete. Fix it and try again.");
         return;
       }
       setListed(data.item);
+      if (data.next === "desk") setLocked(true);
       const catalog = await fetch("/api/catalog", { cache: "no-store" });
       const next = (await catalog.json()) as { items?: CatalogItem[] };
       if (Array.isArray(next.items)) setItems(next.items);
@@ -80,43 +99,54 @@ export function DeskForm({ initialItems }: DeskFormProps) {
 
   return (
     <>
+      {formOpen ? (
       <section className="band">
         <p className="kicker">What you do next</p>
-        <h2>Put one product on the list.</h2>
+        <h2>{paid ? "Put a product on the list." : "List your first product free."}</h2>
         <div className="prose">
           <ol>
             <li>Fill every field. Bots skip incomplete listings.</li>
             <li>Submit. The product goes on the public list.</li>
             <li>
-              Bots can read it at <code>/api/catalog</code>. A bot buy does not
-              take money yet.
+              Bots can read it at <code>/api/catalog</code>. The bot pays at
+              the checkout link or the x402 details you enter.
             </li>
           </ol>
         </div>
       </section>
+      ) : null}
 
       {listed ? (
         <section className="ok" aria-live="polite">
           <p className="kicker">On the list</p>
           <h2>{listedTitle} is on the list.</h2>
           <p className="lede">
-            Shopping bots can see it on the public product list. A bot buy does
-            not take money yet. Money has not moved.
+            Shopping bots can see it on the public product list. They pay at
+            the listing’s checkout link or x402 details.
+            {paid
+              ? null
+              : " That was your free listing. A desk is $49 once for 12 months if you want to list more."}
           </p>
           <div className="row">
             <a className="ghost" href="/api/catalog">
               See the public list
             </a>
+            {paid ? null : (
+              <a className="cta" href={DESK_CHECKOUT}>
+                {DESK_CTA}
+              </a>
+            )}
           </div>
         </section>
       ) : null}
 
-      {reason ? (
+      {formOpen && reason ? (
         <p className="fail" role="alert">
           {reason}
         </p>
       ) : null}
 
+      {formOpen ? (
       <form className="band" onSubmit={onSubmit}>
         <p className="kicker">One product</p>
         <h2>Product facts.</h2>
@@ -135,6 +165,94 @@ export function DeskForm({ initialItems }: DeskFormProps) {
             autoComplete="off"
           />
         </div>
+
+        <fieldset className="field">
+          <legend>What kind of product?</legend>
+          <div className="choices">
+            <label>
+              <input
+                type="radio"
+                name="kind"
+                value="physical"
+                checked={kind === "physical"}
+                onChange={() => setKind("physical")}
+              />
+              A physical thing
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="kind"
+                value="digital"
+                checked={kind === "digital"}
+                onChange={() => setKind("digital")}
+              />
+              A digital thing
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="field">
+          <legend>How the bot pays</legend>
+          <span className="hint">
+            Enter a checkout link and/or a public x402 wallet. Never paste a
+            private key, seed phrase, or secret key. The $49 desk checkout is
+            live on Whop. Other products pay at the link or wallet you enter.
+          </span>
+          <label htmlFor="checkout">Checkout link</label>
+          <input
+            id="checkout"
+            name="checkout"
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            value={checkout}
+            onChange={(e) => setCheckout(e.target.value)}
+            autoComplete="off"
+          />
+          <label htmlFor="payTo">x402 wallet address</label>
+          <input
+            id="payTo"
+            name="payTo"
+            value={payTo}
+            onChange={(e) => setPayTo(e.target.value)}
+            autoComplete="off"
+          />
+          <label htmlFor="network">x402 network</label>
+          <select
+            id="network"
+            name="network"
+            value={network}
+            onChange={(e) => setNetwork(e.target.value)}
+          >
+            <option value="">Choose if you use x402</option>
+            <option value="base">Base</option>
+            <option value="solana">Solana</option>
+          </select>
+          <label htmlFor="x402_price">x402 price in US dollars</label>
+          <input
+            id="x402_price"
+            name="x402_price"
+            value={x402Price}
+            onChange={(e) => setX402Price(e.target.value)}
+            autoComplete="off"
+          />
+          <span className="hint">Asset is USDC. Public details only.</span>
+        </fieldset>
+
+        {kind === "digital" ? (
+          <div className="field">
+            <label htmlFor="delivery">How does the buyer get it?</label>
+            <input
+              id="delivery"
+              name="delivery"
+              value={delivery}
+              onChange={(e) => setDelivery(e.target.value)}
+              autoComplete="off"
+            />
+            <span className="hint">Account access, download, email, or login.</span>
+          </div>
+        ) : null}
 
         <fieldset className="field">
           <legend>Six real specs</legend>
@@ -173,15 +291,23 @@ export function DeskForm({ initialItems }: DeskFormProps) {
           <input
             id="inventory"
             name="inventory"
-            inputMode="numeric"
             value={inventory}
             onChange={(e) => setInventory(e.target.value)}
             autoComplete="off"
           />
+          <span className="hint">
+            {kind === "digital"
+              ? "A number, or unlimited."
+              : "How many you can ship. Zero does not count."}
+          </span>
         </div>
 
         <div className="field">
-          <label htmlFor="return_days">How many days can they return it?</label>
+          <label htmlFor="return_days">
+            {kind === "digital"
+              ? "How many days can they get a refund?"
+              : "How many days can they return it?"}
+          </label>
           <input
             id="return_days"
             name="return_days"
@@ -190,7 +316,11 @@ export function DeskForm({ initialItems }: DeskFormProps) {
             onChange={(e) => setReturnDays(e.target.value)}
             autoComplete="off"
           />
-          <span className="hint">Use 0 if you do not take returns.</span>
+          <span className="hint">
+            {kind === "digital"
+              ? "Use 0 if you do not give refunds."
+              : "Use 0 if you do not take returns."}
+          </span>
         </div>
 
         <div className="field">
@@ -202,22 +332,30 @@ export function DeskForm({ initialItems }: DeskFormProps) {
             onChange={(e) => setWarranty(e.target.value)}
             autoComplete="off"
           />
-          <span className="hint">If there is none, write none.</span>
+          <span className="hint">
+            {kind === "digital"
+              ? "If there is none, write none. If access lasts 12 months, write that."
+              : "If there is none, write none."}
+          </span>
         </div>
 
-        <div className="field">
-          <label htmlFor="ships_from">Where does it ship from?</label>
-          <input
-            id="ships_from"
-            name="ships_from"
-            value={shipsFrom}
-            onChange={(e) => setShipsFrom(e.target.value)}
-            autoComplete="off"
-          />
-        </div>
+        {kind === "physical" ? (
+          <div className="field">
+            <label htmlFor="ships_from">Where does it ship from?</label>
+            <input
+              id="ships_from"
+              name="ships_from"
+              value={shipsFrom}
+              onChange={(e) => setShipsFrom(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+        ) : null}
 
         <div className="field">
-          <label htmlFor="lead_time">How long until it ships?</label>
+          <label htmlFor="lead_time">
+            {kind === "digital" ? "How long until they get it?" : "How long until it ships?"}
+          </label>
           <input
             id="lead_time"
             name="lead_time"
@@ -225,7 +363,9 @@ export function DeskForm({ initialItems }: DeskFormProps) {
             onChange={(e) => setLeadTime(e.target.value)}
             autoComplete="off"
           />
-          <span className="hint">Example: 48 hours or 2 days.</span>
+          <span className="hint">
+            {kind === "digital" ? "Instant is allowed." : "Example: 48 hours or 2 days."}
+          </span>
         </div>
 
         <div className="row">
@@ -234,6 +374,7 @@ export function DeskForm({ initialItems }: DeskFormProps) {
           </button>
         </div>
       </form>
+      ) : null}
 
       <section className="band">
         <p className="kicker">What’s on the list</p>
@@ -246,7 +387,9 @@ export function DeskForm({ initialItems }: DeskFormProps) {
               <li key={item.sku}>
                 <strong>{item.title}</strong>
                 <span>
-                  {item.inventory} in stock · ships from {item.ships_from}
+                  {item.kind === "digital"
+                    ? `${item.unlimited ? "unlimited" : item.inventory} · ${item.delivery || "digital"}`
+                    : `${item.inventory} in stock · ships from ${item.ships_from}`}
                 </span>
               </li>
             ))}
