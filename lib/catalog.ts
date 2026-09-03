@@ -67,7 +67,7 @@ const FLOOR_DESK: CatalogItem = {
   sla_hours: 0,
   return_days: 0,
   refund: "Access ends at 12 months. Not forever.",
-  warranty: "none — 12-month access",
+  warranty: "none. Access lasts 12 months.",
   delivery: "membership access on Whop after payment",
 };
 
@@ -84,7 +84,7 @@ export function findCatalogItem(id: string): CatalogItem | undefined {
 
 export function buildCatalog(now = new Date(), origin?: string): CatalogResponse {
   const items = [...HOUSE_ITEMS, ...listListings()].map((item) => {
-    const payment = origin ? expandPayment(item.payment, origin) : item.payment;
+    const payment = expandPayment(item.payment, origin || "");
     return {
       ...item,
       payment,

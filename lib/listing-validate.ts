@@ -1,5 +1,5 @@
 import type { CatalogItem, CatalogSpec, ProductKind } from "./catalog";
-import { buildPayment } from "./payment.ts";
+import { buildPayment, parseCheckoutUrl } from "./payment.ts";
 
 const HYPE_VALUE =
   /^(premium|quality|perfect|best|amazing|luxury|exclusive|professional|ready|high[- ]quality|top[- ]quality|the best|great quality)$/i;
@@ -62,15 +62,7 @@ export function parseSlaHours(text: string): number | null {
 }
 
 export function parseCheckout(value: unknown): string | null {
-  const raw = asText(value);
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== "https:") return null;
-    if (!url.hostname.includes(".")) return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
+  return parseCheckoutUrl(value);
 }
 
 function isMarketingSpec(spec: CatalogSpec): boolean {
