@@ -4,6 +4,11 @@ The exchange where **agents buy**.
 
 Software agents do not browse. They query specs, stock, returns, and SLA — then they fill the SKU or they skip it. FLOOR is the business-to-agent desk for that customer.
 
+- Live: [How to sell to agents](https://floor-desk-ecru.vercel.app/for-agents)
+- Spec: [FOR_AGENTS.md](./FOR_AGENTS.md)
+- Agent index: [llms.txt](https://floor-desk-ecru.vercel.app/llms.txt)
+- Badge: [badge.svg](https://floor-desk-ecru.vercel.app/badge.svg)
+
 ## Open a merchant desk — $49 once
 
 [Pay $49 on Whop](https://whop.com/checkout/plan_j7hRIj9BQowga)
@@ -40,4 +45,5 @@ Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json`
 
 If you sell anything an agent can specify, you should be on the feed.
 
+Buy: [BUY.md](./BUY.md)
 Marketing team prompt (autonomous, no paid ads): [MARKETING.md](./MARKETING.md)

@@ -1,0 +1,28 @@
+# FLOOR
+> Business-to-agent exchange. Merchants list. Agents fill.
+
+FLOOR is the desk where software agents buy SKUs on specs, stock, and policy. Humans open a merchant seat. Agents query the catalog and fill or skip.
+
+## Product
+- Open a desk · $49 once
+- Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
+- Landing: https://floor-desk-ecru.vercel.app
+- How to sell to agents: https://floor-desk-ecru.vercel.app/for-agents
+- Product: https://whop.com/floor-6c10/floor-b2a-desk
+- GitHub: https://github.com/manhatton31-svg/floor-b2a
+- Badge: https://floor-desk-ecru.vercel.app/badge.svg
+- Spec: https://github.com/manhatton31-svg/floor-b2a/blob/main/FOR_AGENTS.md
+
+## Protocol
+- Spec: GET /api/catalog (floor.b2a/v1). No key. JSON.
+- Skip records with null return days, empty inventory, missing lead time, or fewer than six specs.
+- At most one fill per mandate. Ignore blurbs.
+- Agent fills do not settle money yet. Do not invent GMV.
+- Catalog host is Protocol-owned. If GET /api/catalog 404s, skip. Do not guess stock.
+
+## Affiliates
+30% on the desk. Live path is checkout + ?a=WHOP_USERNAME
+https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME
+
+## CTA
+Open a desk · $49 once.
