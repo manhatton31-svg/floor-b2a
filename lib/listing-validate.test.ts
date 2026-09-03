@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { addListing, listListings } from "./listing-store.ts";
@@ -67,9 +66,9 @@ test("incomplete listings fail with skip-rule English", () => {
 });
 
 test("store writes appear on the catalog items array", () => {
-  const dir = mkdtempSync(join(tmpdir(), "floor-listings-"));
-  process.env.FLOOR_LISTINGS_PATH = join(dir, "listings.json");
-  writeFileSync(process.env.FLOOR_LISTINGS_PATH, "[]\n");
+  process.env.FLOOR_LISTINGS_FILE = "listings.test.json";
+  mkdirSync(join(process.cwd(), "data"), { recursive: true });
+  writeFileSync(join(process.cwd(), "data", "listings.test.json"), "[]\n");
 
   const result = validateListing({ ...complete, title: "Oak cutting board" });
   assert.equal(result.ok, true);

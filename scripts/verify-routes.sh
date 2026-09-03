@@ -115,24 +115,26 @@ assert "six" in body["reason"].lower()
 PY
 
 echo "== desk ack + complete listing lands on GET /api/catalog =="
+TITLE="12oz ceramic mug ${RANDOM}"
 code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-ok.json -w "%{http_code}" \
   -H "Content-Type: application/json" \
-  -d '{"title":"12oz ceramic mug","specs":[{"name":"Capacity","value":"12 oz"},{"name":"Material","value":"ceramic"},{"name":"Color","value":"navy"},{"name":"Weight","value":"380 g"},{"name":"Dishwasher","value":"yes"},{"name":"Microwave","value":"safe"}],"inventory":20,"return_days":30,"warranty":"1 year","ships_from":"Austin, TX","lead_time":"2 days"}' \
+  -d "{\"title\":\"$TITLE\",\"specs\":[{\"name\":\"Capacity\",\"value\":\"12 oz\"},{\"name\":\"Material\",\"value\":\"ceramic\"},{\"name\":\"Color\",\"value\":\"navy\"},{\"name\":\"Weight\",\"value\":\"380 g\"},{\"name\":\"Dishwasher\",\"value\":\"yes\"},{\"name\":\"Microwave\",\"value\":\"safe\"}],\"inventory\":20,\"return_days\":30,\"warranty\":\"1 year\",\"ships_from\":\"Austin, TX\",\"lead_time\":\"2 days\"}" \
   "$BASE/api/listings")
 test "$code" = "200"
 curl -sS -o /tmp/floor-catalog-after.json "$BASE/api/catalog"
-python3 - <<'PY'
-import json
+TITLE="$TITLE" python3 - <<'PY'
+import json, os
 from pathlib import Path
+title = os.environ["TITLE"]
 posted = json.loads(Path("/tmp/floor-listing-ok.json").read_text())
 assert posted["ok"] is True
 assert posted["settlement"] == "not_settled"
-assert posted["item"]["title"] == "12oz ceramic mug"
+assert posted["item"]["title"] == title
 assert "gmv" not in posted
 catalog = json.loads(Path("/tmp/floor-catalog-after.json").read_text())
 assert catalog["protocol"] == "floor.b2a/v1"
 assert catalog["settlement"] == "not_settled"
-assert any(item["title"] == "12oz ceramic mug" for item in catalog["items"]), catalog
+assert any(item["title"] == title for item in catalog["items"]), catalog
 assert "gmv" not in catalog
 PY
 

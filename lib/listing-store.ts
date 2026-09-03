@@ -2,56 +2,49 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { CatalogItem } from "./catalog";
 
-const memory: CatalogItem[] = [];
-let loadedPath = "";
-
 function storePath(): string {
-  if (process.env.FLOOR_LISTINGS_PATH) return process.env.FLOOR_LISTINGS_PATH;
-  if (process.env.VERCEL) return "/tmp/floor-listings.json";
-  return join(process.cwd(), "data", "listings.json");
+  if (process.env.VERCEL) return join("/tmp", "floor-listings.json");
+  const name = process.env.FLOOR_LISTINGS_FILE || "listings.json";
+  const safe = /^[A-Za-z0-9._-]+$/.test(name) ? name : "listings.json";
+  return join(process.cwd(), "data", safe);
 }
 
-function load(): CatalogItem[] {
+function readListings(): CatalogItem[] {
   const path = storePath();
-  if (loadedPath === path) return memory;
-  memory.length = 0;
-  loadedPath = path;
   try {
-    if (!existsSync(path)) return memory;
+    if (!existsSync(path)) return [];
     const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
-    if (!Array.isArray(parsed)) return memory;
-    for (const row of parsed) {
-      if (row && typeof row === "object" && typeof (row as CatalogItem).sku === "string") {
-        memory.push(row as CatalogItem);
-      }
-    }
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (row): row is CatalogItem =>
+        !!row && typeof row === "object" && typeof (row as CatalogItem).sku === "string",
+    );
   } catch {
-    // Empty list is honest if the file is missing or unreadable.
+    return [];
   }
-  return memory;
 }
 
-function persist() {
+function persist(items: CatalogItem[]) {
   const path = storePath();
   try {
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, `${JSON.stringify(memory, null, 2)}\n`);
+    writeFileSync(path, `${JSON.stringify(items, null, 2)}\n`);
   } catch {
-    // Memory still holds the list for this process.
+    // The public list stays empty if the file cannot be written.
   }
 }
 
 export function listListings(): CatalogItem[] {
-  return load().slice();
+  return readListings();
 }
 
 export function listingIds(): string[] {
-  return load().map((item) => item.sku);
+  return readListings().map((item) => item.sku);
 }
 
 export function addListing(item: CatalogItem): CatalogItem {
-  load();
-  memory.push(item);
-  persist();
+  const items = readListings();
+  items.push(item);
+  persist(items);
   return item;
 }
