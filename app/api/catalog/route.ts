@@ -10,16 +10,8 @@ export function OPTIONS() {
 }
 
 export function GET(request: Request) {
-  try {
-    recordCatalogVisit({
-      path: new URL(request.url).pathname,
-      userAgent: request.headers.get("user-agent"),
-    });
-  } catch {
-    // A tape write must not take down the product list.
-  }
-
-  return Response.json(buildCatalog(new Date(), originFromRequest(request)), {
+  const catalog = buildCatalog(new Date(), originFromRequest(request));
+  const response = Response.json(catalog, {
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
@@ -27,4 +19,16 @@ export function GET(request: Request) {
       "Cache-Control": "no-store",
     },
   });
+
+  try {
+    recordCatalogVisit({
+      path: new URL(request.url).pathname,
+      userAgent: request.headers.get("user-agent"),
+      status: response.status,
+    });
+  } catch {
+    // A tape write must not take down the product list.
+  }
+
+  return response;
 }

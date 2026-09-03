@@ -98,11 +98,23 @@ grep -q "x402 wallet address" /tmp/floor-desk.html
 grep -q "A digital thing" /tmp/floor-desk.html
 ! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA|merchant seat|money does not move" /tmp/floor-desk.html
 
+echo "== house User-Agents are tagged, not named as shopping bots =="
+curl -sS -A "FLOOR-Watch" -o /dev/null "$BASE/api/catalog"
+curl -sS -A "FLOOR Demand" -o /dev/null "$BASE/api/catalog"
+curl -sS -A "FLOOR-Protocol" -o /dev/null "$BASE/api/catalog"
+curl -sS -A "FLOOR Sales" -o /dev/null "$BASE/api/catalog"
+
 echo "== GET /tape =="
 code=$(curl -sS -o /tmp/floor-tape.html -w "%{http_code}" "$BASE/tape")
 test "$code" = "200"
 grep -q "Catalog visitors" /tmp/floor-tape.html
 grep -q "verify-routes-catalog" /tmp/floor-tape.html
+grep -q "status 200" /tmp/floor-tape.html
+grep -q "FLOOR-Watch" /tmp/floor-tape.html
+grep -q "FLOOR Demand" /tmp/floor-tape.html
+grep -q "FLOOR-Protocol" /tmp/floor-tape.html
+grep -q "FLOOR Sales" /tmp/floor-tape.html
+grep -q "Our own checks" /tmp/floor-tape.html
 ! grep -qiE "FLOORQA|lifetime|money does not move" /tmp/floor-tape.html
 
 echo "== GET /directories =="
