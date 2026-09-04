@@ -1,0 +1,21 @@
+{
+  "name": "floor-b2a",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test lib/catalog.test.mjs && node --experimental-strip-types --test lib/listing-validate.test.ts lib/tape-store.test.ts lib/feedback-store.test.ts lib/whop.test.ts lib/whop-webhook.test.ts"
+  },
+  "dependencies": {
+    "next": "^16.3.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.9.2"
+  }
+}
