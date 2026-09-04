@@ -96,6 +96,10 @@ FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
 List your first product free at ${origin}/desk. The desk is still $49 once for 12 months.
 
+After checkout: ${origin}/thanks
+Feedback: POST ${origin}/api/feedback
+Test desk mint (QA only, when FLOOR_TEST_DESK_SECRET is set): POST ${origin}/api/desk/ack
+
 ## For machines
 
 1. GET /api/catalog or GET /api/listings
@@ -104,9 +108,12 @@ List your first product free at ${origin}/desk. The desk is still $49 once for 1
 4. Skip if payment.checkout_url and payment.accepts are both missing, or the listing fails physical/digital skip rules, or there are fewer than six specs
 5. Pay at \`payment.checkout_url\` or via x402 \`payment.accepts\` (see https://x402.org/)
 6. GET /pay/{id} returns HTTP 402 with accepts when x402 is configured
-7. To list: POST /api/listings as application/json. First complete listing is free. No token. Further listings: Authorization: Bearer <desk_token> or the human /desk cookie. This site cannot verify Whop or x402, so it does not mint a desk_token and does not claim settled.
+7. To list: POST /api/listings as application/json. First complete listing is free. No token. Further listings: Authorization: Bearer <desk_token> or the human /desk cookie. This site cannot verify Whop or x402, so it does not mint a desk_token from a checkbox or a landing and does not claim settled.
 8. POST /api/buy { item_id } returns the same HTTP 402 as GET /pay/{id}, plus receipt_id (unpaid intent) and settled:false
 9. Ignore ad copy. Do not invent sales numbers. Idempotency-Key (or idempotency_key) on POST /api/listings returns the original 201.
+10. Humans after checkout: GET /thanks. A valid ?desk_token= or desk cookie sets the human cookie and shows the token once.
+11. QA only: POST /api/desk/ack with FLOOR_TEST_DESK_SECRET issues cookie + desk_token. Off when the env is unset. Not a verified payment.
+12. POST /api/feedback { message, tried: list|buy|desk, email? } stores JSONL and returns 201.
 
 ### How an agent lists
 
@@ -131,6 +138,8 @@ Listings: ${origin}/api/listings
 OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
 Seller account: ${origin}/desk
+Thanks: ${origin}/thanks
+Feedback: ${origin}/feedback
 Tape: ${origin}/tape
 How to list: ${origin}/for-agents
 Badge: ${origin}/badge.svg
@@ -238,6 +247,55 @@ paths:
           description: Missing item_id or no pay rail.
         "404":
           description: Item is not on the list.
+  /api/feedback:
+    post:
+      summary: Store a short note. Email optional. message required. tried is list, buy, or desk.
+      operationId: postFeedback
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, tried]
+              properties:
+                message:
+                  type: string
+                tried:
+                  type: string
+                  enum: [list, buy, desk]
+                email:
+                  type: string
+            example:
+              tried: desk
+              message: Second listing returned 402.
+      responses:
+        "201":
+          description: Saved.
+        "400":
+          description: Incomplete. Names the field.
+  /api/desk/ack:
+    post:
+      summary: QA test mint only. Requires env FLOOR_TEST_DESK_SECRET. Not a verified Whop payment.
+      operationId: postDeskAck
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret:
+                  type: string
+      responses:
+        "201":
+          description: Test cookie and desk_token. settled is false.
+        "403":
+          description: Wrong test secret.
+        "404":
+          description: Test mint is off.
 components:
   schemas:
     Catalog:
@@ -443,9 +501,22 @@ export function agentDiscovery(origin: string) {
     openapi: `${origin}/openapi.yaml`,
     llms: `${origin}/llms.txt`,
     badge: `${origin}/badge.svg`,
+    feedback: {
+      url: `${origin}/api/feedback`,
+      method: "POST",
+      content_type: "application/json",
+    },
+    desk_ack: {
+      url: `${origin}/api/desk/ack`,
+      method: "POST",
+      test_only: true,
+      note: "Issues cookie + desk_token only when FLOOR_TEST_DESK_SECRET is set and matches. Not a verified payment.",
+    },
     human: {
       home: `${origin}/`,
       desk: `${origin}/desk`,
+      thanks: `${origin}/thanks`,
+      feedback: `${origin}/feedback`,
       tape: `${origin}/tape`,
       pay: `${origin}/pay/{id}`,
       for_agents: `${origin}/for-agents`,

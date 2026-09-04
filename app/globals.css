@@ -216,6 +216,10 @@ h2 {
 }
 
 footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
   margin-top: 80px;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -298,7 +302,8 @@ button.ghost {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   background: var(--bg);
   color: var(--fg);
@@ -307,6 +312,11 @@ button.ghost {
   padding: 12px 14px;
   font: inherit;
   font-size: 15px;
+}
+
+.field textarea {
+  min-height: 140px;
+  resize: vertical;
 }
 
 .spec-row {

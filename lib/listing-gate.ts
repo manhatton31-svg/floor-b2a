@@ -1,12 +1,12 @@
 import { HOUSE_DESK_PAYTO } from "./catalog";
 import { USDC } from "./payment";
 import { DESK_CHECKOUT, DESK_CTA, DESK_PRICE } from "./site";
-import { hasDeskAck, hasUsedFreeListing } from "./desk-ack";
+import { hasDeskAck, hasUsedFreeListing, tokenFromCookie } from "./desk-ack";
 import { bearerToken, hasDeskToken } from "./desk-token";
 
 export const SECOND_LISTING_STATUS = 402;
 
-export const SECOND_LISTING_REASON = `${DESK_CTA}. Further listings need a desk. Agents send Authorization: Bearer <desk_token> if they have one. First listing needs no token. This site cannot see Whop or x402 payment, so it does not mint a desk_token and does not take a checkbox as proof. Pay the house desk at ${DESK_CHECKOUT} or the house x402 rails.`;
+export const SECOND_LISTING_REASON = `${DESK_CTA}. Further listings need a desk. Agents send Authorization: Bearer <desk_token> if they have one. First listing needs no token. This site cannot see Whop or x402 payment, so it does not mint a desk_token from a checkbox or a landing. Pay the house desk at ${DESK_CHECKOUT} or the house x402 rails. After checkout, humans go to /thanks.`;
 
 export function listingAccess(request: Request): {
   allowed: boolean;
@@ -14,12 +14,16 @@ export function listingAccess(request: Request): {
   reason?: string;
   status?: number;
 } {
-  const token = bearerToken(request.headers.get("authorization"));
-  if (token && hasDeskToken(token)) {
+  const headerToken = bearerToken(request.headers.get("authorization"));
+  if (headerToken && hasDeskToken(headerToken)) {
     return { allowed: true, paid: true };
   }
 
   const cookie = request.headers.get("cookie");
+  const cookieToken = tokenFromCookie(cookie);
+  if (cookieToken && hasDeskToken(cookieToken)) {
+    return { allowed: true, paid: true };
+  }
   if (hasDeskAck(cookie)) {
     return { allowed: true, paid: true };
   }
@@ -47,6 +51,7 @@ export function deskRequiredBody() {
       checkout: DESK_CHECKOUT,
       buy: "/api/buy",
       item_id: "floor-desk",
+      thanks: "/thanks",
       x402: [
         { network: "base", payTo: HOUSE_DESK_PAYTO.base, asset: USDC.base.asset, price: "49" },
         { network: "solana", payTo: HOUSE_DESK_PAYTO.solana, asset: USDC.solana.asset, price: "49" },

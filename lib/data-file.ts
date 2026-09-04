@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export function dataFile(name: string, tmpName: string): string {
@@ -20,6 +20,15 @@ export function writeJsonFile(path: string, value: unknown) {
   try {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+  } catch {
+    // Public routes stay up if a local file cannot be written.
+  }
+}
+
+export function appendJsonl(path: string, value: unknown) {
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    appendFileSync(path, `${JSON.stringify(value)}\n`);
   } catch {
     // Public routes stay up if a local file cannot be written.
   }

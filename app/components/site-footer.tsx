@@ -1,17 +1,26 @@
+const FOOTER_LINKS = [
+  ["/", "Home"],
+  ["/desk", "Desk"],
+  ["/thanks", "Thanks"],
+  ["/feedback", "Feedback"],
+  ["/for-agents", "How to list"],
+  ["/tape", "Tape"],
+  ["/llms.txt", "llms.txt"],
+  ["/openapi.yaml", "OpenAPI"],
+  ["/.well-known/agent.json", "agent.json"],
+  ["/api/catalog", "Catalog"],
+] as const;
+
 export function SiteFooter() {
   return (
     <footer>
       FLOOR · seller accounts for shopping bots
-      <span>·</span>
-      <a href="/desk">Seller account</a>
-      <span>·</span>
-      <a href="/tape">Tape</a>
-      <span>·</span>
-      <a href="/for-agents">How to list</a>
-      <span>·</span>
-      <a href="/llms.txt">llms.txt</a>
-      <span>·</span>
-      <a href="/badge.svg">badge</a>
+      {FOOTER_LINKS.map(([href, label]) => (
+        <span key={href}>
+          <span>·</span>
+          <a href={href}>{label}</a>
+        </span>
+      ))}
     </footer>
   );
 }

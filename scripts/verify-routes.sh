@@ -63,6 +63,9 @@ grep -q "/api/buy" /tmp/floor-llms.txt
 grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-llms.txt
 grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-llms.txt
 grep -q "/desk" /tmp/floor-llms.txt
+grep -q "/thanks" /tmp/floor-llms.txt
+grep -q "/api/feedback" /tmp/floor-llms.txt
+grep -q "/api/desk/ack" /tmp/floor-llms.txt
 ! grep -q FLOORQA /tmp/floor-llms.txt
 ! grep -q "?a=WHOP_USERNAME" /tmp/floor-llms.txt
 ! grep -qi "money does not move" /tmp/floor-llms.txt
@@ -73,6 +76,8 @@ curl -sS -o /tmp/floor-openapi.yaml -w "status:%{http_code}\n" "$BASE/openapi.ya
 grep -q "/api/catalog" /tmp/floor-openapi.yaml
 grep -q "/api/listings" /tmp/floor-openapi.yaml
 grep -q "/api/buy" /tmp/floor-openapi.yaml
+grep -q "/api/feedback" /tmp/floor-openapi.yaml
+grep -q "/api/desk/ack" /tmp/floor-openapi.yaml
 grep -q "checkout" /tmp/floor-openapi.yaml
 
 echo "== GET /.well-known/agent.json =="
@@ -92,6 +97,10 @@ assert body["desk"]["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga
 assert body["desk"]["x402"][0]["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
 assert body["desk"]["x402"][1]["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
 assert "/desk" in body["human"]["desk"]
+assert "/thanks" in body["human"]["thanks"]
+assert "/feedback" in body["human"]["feedback"]
+assert "/api/feedback" in body["feedback"]["url"]
+assert "/api/desk/ack" in body["desk_ack"]["url"]
 assert "gmv" not in body
 assert "FLOORQA" not in json.dumps(body)
 PY
@@ -106,6 +115,8 @@ grep -q "/api/catalog" /tmp/floor-sitemap.xml
 grep -q "/api/listings" /tmp/floor-sitemap.xml
 grep -q "/for-agents" /tmp/floor-sitemap.xml
 grep -q "/desk" /tmp/floor-sitemap.xml
+grep -q "/thanks" /tmp/floor-sitemap.xml
+grep -q "/feedback" /tmp/floor-sitemap.xml
 grep -q "/tape" /tmp/floor-sitemap.xml
 grep -q "/badge.svg" /tmp/floor-sitemap.xml
 
@@ -135,6 +146,9 @@ test "$(grep -o 'Open a desk · \$49 once · 12 months' /tmp/floor-home.html | w
 ! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA|money does not move" /tmp/floor-home.html
 grep -q "$PAY" /tmp/floor-home.html
 grep -q 'href="/desk"' /tmp/floor-home.html
+grep -q 'href="/thanks"' /tmp/floor-home.html
+grep -q 'href="/feedback"' /tmp/floor-home.html
+grep -q 'href="/api/catalog"' /tmp/floor-home.html
 grep -q "List your first product free" /tmp/floor-home.html
 ! grep -q "?a=WHOP_USERNAME" /tmp/floor-home.html
 
@@ -143,6 +157,10 @@ code=$(curl -sS -o /tmp/floor-desk.html -w "%{http_code}" "$BASE/desk")
 test "$code" = "200"
 grep -q "$CTA" /tmp/floor-desk.html
 grep -q "List your first product free" /tmp/floor-desk.html
+grep -q "$PAY" /tmp/floor-desk.html
+grep -q 'href="/feedback"' /tmp/floor-desk.html
+grep -q 'href="/for-agents"' /tmp/floor-desk.html
+grep -q 'href="/api/catalog"' /tmp/floor-desk.html
 grep -q "How the bot pays" /tmp/floor-desk.html
 grep -q "How bots pay you" /tmp/floor-desk.html
 grep -q "Stripe Payment Link" /tmp/floor-desk.html
@@ -152,6 +170,45 @@ grep -q "x402 wallet address" /tmp/floor-desk.html
 grep -q "A digital thing" /tmp/floor-desk.html
 ! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA|merchant seat|money does not move" /tmp/floor-desk.html
 ! grep -qiE 'name="(seed|private_key|password|sk_live)"' /tmp/floor-desk.html
+! grep -q "I paid \$49" /tmp/floor-desk.html
+
+echo "== GET /thanks =="
+code=$(curl -sS -o /tmp/floor-thanks.html -w "%{http_code}" "$BASE/thanks")
+test "$code" = "200"
+grep -q "You have 12 months" /tmp/floor-thanks.html
+grep -q "/desk" /tmp/floor-thanks.html
+grep -q "/api/catalog" /tmp/floor-thanks.html
+grep -q "/for-agents" /tmp/floor-thanks.html
+grep -q "/feedback" /tmp/floor-thanks.html
+grep -q "$PAY" /tmp/floor-thanks.html
+grep -q "whop.com/floor-6c10/floor-b2a-desk" /tmp/floor-thanks.html
+grep -q "cannot see the Whop payment" /tmp/floor-thanks.html
+! grep -qiE "lifetime|FLOORQA|gmv" /tmp/floor-thanks.html
+
+echo "== GET /feedback =="
+code=$(curl -sS -o /tmp/floor-feedback.html -w "%{http_code}" "$BASE/feedback")
+test "$code" = "200"
+grep -q "What did you try" /tmp/floor-feedback.html
+grep -q 'name="message"' /tmp/floor-feedback.html
+grep -q 'name="email"' /tmp/floor-feedback.html
+grep -q 'name="tried"' /tmp/floor-feedback.html
+! grep -qiE "lifetime|FLOORQA|gmv" /tmp/floor-feedback.html
+
+echo "== POST /api/feedback =="
+code=$(curl -sS -o /tmp/floor-feedback.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d '{"tried":"desk","message":"Second listing returned 402.","email":"ada@example.com"}' \
+  "$BASE/api/feedback")
+test "$code" = "201"
+python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-feedback.json").read_text())
+assert body["ok"] is True
+assert body["tried"] == "desk"
+assert body.get("id")
+assert "gmv" not in body
+PY
 
 echo "== house User-Agents are tagged, not named as shopping bots =="
 curl -sS -A "FLOOR-Watch" -o /dev/null "$BASE/api/catalog"
@@ -376,11 +433,61 @@ b = json.loads(Path("/tmp/floor-idemp-2.json").read_text())
 assert a["item"]["sku"] == b["item"]["sku"]
 PY
 
-echo "== digital listing after desk ack =="
-curl -sS -c "$jar" -b "$jar" -o /dev/null -X POST "$BASE/desk/ack"
+echo "== POST /api/desk/ack without secret does not mint =="
+code=$(curl -sS -o /tmp/floor-ack-off.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"not-the-test-secret"}' \
+  "$BASE/api/desk/ack")
+if [ -n "${FLOOR_TEST_DESK_SECRET:-}" ]; then
+  test "$code" = "403"
+else
+  test "$code" = "404"
+fi
+python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-ack-off.json").read_text())
+assert body["ok"] is False
+assert body["settled"] is False
+assert "desk_token" not in body
+assert "gmv" not in body
+PY
+
+echo "== locked /desk after free listing shows $49 checkout =="
+code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-desk-locked.html -w "%{http_code}" "$BASE/desk")
+test "$code" = "200"
+grep -q "Further listings need a desk" /tmp/floor-desk-locked.html
+grep -q "$CTA" /tmp/floor-desk-locked.html
+grep -q "$PAY" /tmp/floor-desk-locked.html
+grep -q "How bots pay you" /tmp/floor-desk-locked.html
+grep -q 'href="/feedback"' /tmp/floor-desk-locked.html
+! grep -q "I paid \$49" /tmp/floor-desk-locked.html
+
+echo "== digital listing after test desk ack =="
+if [ -z "${FLOOR_TEST_DESK_SECRET:-}" ]; then
+  echo "skip paid listing: FLOOR_TEST_DESK_SECRET unset (test mint off)"
+else
+code=$(curl -sS -c "$jar" -b "$jar" -D /tmp/floor-ack.hdr -o /tmp/floor-ack.json -w "%{http_code}" \
+  -H "Content-Type: application/json" \
+  -d "{\"secret\":\"$FLOOR_TEST_DESK_SECRET\"}" \
+  "$BASE/api/desk/ack")
+test "$code" = "201"
+TOKEN=$(python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-ack.json").read_text())
+assert body["ok"] is True
+assert body["test"] is True
+assert body["settled"] is False
+assert body["desk_token"].startswith("desk_")
+assert "gmv" not in body
+print(body["desk_token"])
+PY
+)
 DTITLE="Photo pack ${RANDOM}"
 code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-digital.json -w "%{http_code}" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d "{\"title\":\"$DTITLE\",\"kind\":\"digital\",\"checkout\":\"https://pay.example.com/photos\",\"payTo\":\"0x000000000000000000000000000000000000dEaD\",\"network\":\"base\",\"x402_price\":\"12.50\",\"delivery\":\"download\",\"specs\":$DIGITAL_SPECS,\"inventory\":\"unlimited\",\"return_days\":0,\"warranty\":\"none\",\"lead_time\":\"instant\"}" \
   "$BASE/api/listings")
 test "$code" = "201"
@@ -414,5 +521,13 @@ assert body["accepts"][0]["scheme"] == "exact"
 assert body["accepts"][0]["network"] == "base"
 assert body["checkout_url"].startswith("https://")
 PY
+
+echo "== GET /thanks?desk_token= shows the token once =="
+code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-thanks-once.html -w "%{http_code}" \
+  -L "$BASE/thanks?desk_token=$TOKEN")
+test "$code" = "200"
+grep -q "$TOKEN" /tmp/floor-thanks-once.html
+grep -q "Authorization" /tmp/floor-thanks-once.html
+fi
 
 echo "All routes verified against $BASE"

@@ -67,6 +67,9 @@ export const SKIP_RULES = [
 export const PUBLIC_PATHS = [
   "/",
   "/desk",
+  "/thanks",
+  "/welcome",
+  "/feedback",
   "/tape",
   "/directories",
   "/for-agents",

@@ -17,8 +17,9 @@ export function AgentListDocs() {
           Further listings need Authorization: Bearer {"<desk_token>"} if you
           have one, or the human cookie on /desk. {DESK_CTA}. Checkout{" "}
           <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>. This site cannot verify
-          Whop or x402, so it does not mint a desk_token and does not take a
-          checkbox as proof.
+          Whop or x402, so it does not mint a desk_token from a checkbox or a
+          landing. After checkout, humans go to /thanks. QA may mint only via
+          POST /api/desk/ack when FLOOR_TEST_DESK_SECRET is set.
         </p>
         <p>
           POST /api/buy with {"{ item_id }"} returns the same HTTP 402 as GET
@@ -28,6 +29,10 @@ export function AgentListDocs() {
         <p>
           Send Idempotency-Key or idempotency_key on POST /api/listings. The
           same payload returns the original 201. No second product id.
+        </p>
+        <p>
+          POST /api/feedback with a required message and tried: list, buy, or
+          desk. Email is optional. Humans after a desk purchase read /thanks.
         </p>
         <pre>{JSON.stringify(LISTING_POST_EXAMPLE, null, 2)}</pre>
         <p>Incomplete POST is 400 and names the field. Example missing return_days:</p>
