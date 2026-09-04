@@ -315,14 +315,14 @@ grep -q "Grok Agent Store" /tmp/floor-tape.html
 grep -q "LLMS Central" /tmp/floor-tape.html
 grep -q "Zearches Software" /tmp/floor-tape.html
 grep -q "llmstxt.info" /tmp/floor-tape.html
-grep -q "search=floor" /tmp/floor-tape.html
+grep -q "search=floor-desk-ecru.vercel.app" /tmp/floor-tape.html
 ! grep -qi MeshKore /tmp/floor-tape.html
 
 echo "== GET /directories =="
 code=$(curl -sS -o /tmp/floor-dirs.html -w "%{http_code}" "$BASE/directories")
 test "$code" = "200"
 grep -q "llmstxt.info" /tmp/floor-dirs.html
-grep -q "search=floor" /tmp/floor-dirs.html
+grep -q "search=floor-desk-ecru.vercel.app" /tmp/floor-dirs.html
 ! grep -qi MeshKore /tmp/floor-dirs.html
 
 echo "== GET /pay/floor-desk =="
