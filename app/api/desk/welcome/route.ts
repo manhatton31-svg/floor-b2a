@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   deskAckCookie,
   deskRevealCookie,
@@ -6,6 +5,7 @@ import {
   tokenFromCookie,
 } from "@/lib/desk-ack";
 import { hasDeskToken } from "@/lib/desk-token";
+import { redirectTo } from "@/lib/redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -19,15 +19,12 @@ export function GET(request: Request) {
   const fromCookie = tokenFromCookie(request.headers.get("cookie"));
   const token = fromQuery || fromCookie || "";
 
-  const thanks = new URL("/thanks", request.url);
-
   if (!token || !hasDeskToken(token)) {
-    if (fromQuery) thanks.searchParams.set("unknown", "1");
-    return NextResponse.redirect(thanks, 303);
+    const path = fromQuery ? "/thanks?unknown=1" : "/thanks";
+    return redirectTo(request, path);
   }
 
-  thanks.searchParams.set("once", "1");
-  const res = NextResponse.redirect(thanks, 303);
+  const res = redirectTo(request, "/thanks?once=1");
   res.headers.append("Set-Cookie", deskAckCookie());
   res.headers.append("Set-Cookie", deskTokenCookie(token));
   res.headers.append("Set-Cookie", deskRevealCookie(token));

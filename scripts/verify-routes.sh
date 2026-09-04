@@ -453,7 +453,7 @@ assert "desk_token" not in body
 assert "gmv" not in body
 PY
 
-echo "== locked /desk after free listing shows $49 checkout =="
+echo "== locked /desk after free listing shows \$49 checkout =="
 code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-desk-locked.html -w "%{http_code}" "$BASE/desk")
 test "$code" = "200"
 grep -q "Further listings need a desk" /tmp/floor-desk-locked.html
