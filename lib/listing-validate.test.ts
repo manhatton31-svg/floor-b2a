@@ -1,0 +1,156 @@
+import assert from "node:assert/strict";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import test from "node:test";
+import { addListing, listListings } from "./listing-store.ts";
+import { validateListing } from "./listing-validate.ts";
+import { usdToAtomic } from "./payment.ts";
+
+const completePhysical = {
+  title: "12oz ceramic mug",
+  kind: "physical",
+  checkout: "https://pay.example.com/mug",
+  specs: [
+    { name: "Capacity", value: "12 oz" },
+    { name: "Material", value: "ceramic" },
+    { name: "Color", value: "navy" },
+    { name: "Weight", value: "380 g" },
+    { name: "Dishwasher", value: "yes" },
+    { name: "Microwave", value: "safe" },
+  ],
+  inventory: 20,
+  return_days: 30,
+  warranty: "1 year",
+  ships_from: "Austin, TX",
+  lead_time: "2 days",
+};
+
+const completeDigital = {
+  title: "Photo pack",
+  kind: "digital",
+  checkout: "https://pay.example.com/photos",
+  delivery: "download",
+  specs: [
+    { name: "Format", value: "JPEG" },
+    { name: "Count", value: "24 photos" },
+    { name: "Resolution", value: "4000 px" },
+    { name: "Color", value: "sRGB" },
+    { name: "License", value: "one buyer" },
+    { name: "Size", value: "120 MB" },
+  ],
+  inventory: "unlimited",
+  return_days: 0,
+  warranty: "none",
+  lead_time: "instant",
+};
+
+test("USD price stores USDC atomic units", () => {
+  assert.equal(usdToAtomic("49"), "49000000");
+  assert.equal(usdToAtomic("12.50"), "12500000");
+  assert.equal(usdToAtomic("0"), null);
+});
+
+test("complete physical listing needs a pay method", () => {
+  const result = validateListing(completePhysical);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.item.payment.checkout_url, "https://pay.example.com/mug");
+  assert.ok(!result.item.payment.accepts);
+  assert.ok(!("gmv" in result.item));
+});
+
+test("x402 public config is stored without inventing a sale", () => {
+  const result = validateListing({
+    ...completeDigital,
+    checkout: "",
+    payTo: "0x000000000000000000000000000000000000dEaD",
+    network: "base",
+    x402_price: "12.50",
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.item.payment.checkout_url, undefined);
+  assert.equal(result.item.payment.accepts?.[0].scheme, "exact");
+  assert.equal(result.item.payment.accepts?.[0].network, "base");
+  assert.equal(result.item.payment.accepts?.[0].maxAmountRequired, "12500000");
+  assert.equal(result.item.payment.accepts?.[0].payTo, "0x000000000000000000000000000000000000dEaD");
+  assert.equal(result.item.payment.accepts?.[0].resource, "/pay/photo-pack");
+});
+
+test("missing pay method is a skip", () => {
+  const none = validateListing({ ...completePhysical, checkout: "" });
+  assert.equal(none.ok, false);
+  if (none.ok) return;
+  assert.match(none.reason, /no way to pay/);
+  assert.equal(none.field, "payment");
+  assert.deepEqual(none.skip, ["no payment"]);
+});
+
+test("incomplete listings fail with skip-rule English", () => {
+  const few = validateListing({ ...completePhysical, specs: completePhysical.specs.slice(0, 3) });
+  assert.equal(few.ok, false);
+  if (few.ok) return;
+  assert.match(few.reason, /fewer than six real specs/);
+  assert.equal(few.field, "specs");
+  assert.deepEqual(few.skip, ["no specs"]);
+
+  const stock = validateListing({ ...completePhysical, inventory: 0 });
+  assert.equal(stock.ok, false);
+  if (stock.ok) return;
+  assert.match(stock.reason, /no stock/);
+  assert.equal(stock.field, "inventory");
+
+  const delivery = validateListing({ ...completeDigital, delivery: "" });
+  assert.equal(delivery.ok, false);
+  if (delivery.ok) return;
+  assert.match(delivery.reason, /delivery method/);
+  assert.equal(delivery.field, "delivery");
+
+  const refund = validateListing({ ...completeDigital, return_days: undefined, refund_days: undefined });
+  assert.equal(refund.ok, false);
+  if (refund.ok) return;
+  assert.equal(refund.field, "return_days");
+  assert.deepEqual(refund.skip, ["no return_days"]);
+});
+
+test("agent JSON aliases match the human form", () => {
+  const result = validateListing({
+    kind: "digital",
+    name: "Agent photo pack",
+    specs: completeDigital.specs,
+    inventory: "unlimited",
+    refund_days: 0,
+    warranty: "none",
+    delivery_method: "download",
+    delivery_time: "instant",
+    payment: {
+      checkout_url: "https://pay.example.com/photos",
+      network: "base",
+      payTo: "0x000000000000000000000000000000000000dEaD",
+      price: 12.5,
+    },
+    owner: { name: "Ada" },
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.item.title, "Agent photo pack");
+  assert.equal(result.item.owner.name, "Ada");
+  assert.equal(result.item.owner.type, "desk");
+  assert.equal(result.item.delivery, "download");
+  assert.equal(result.item.payment.checkout_url, "https://pay.example.com/photos");
+  assert.equal(result.item.payment.accepts?.[0].maxAmountRequired, "12500000");
+  assert.equal(result.item.payment.accepts?.[0].payTo, "0x000000000000000000000000000000000000dEaD");
+});
+
+test("store writes appear on the catalog items array", async () => {
+  process.env.FLOOR_LISTINGS_FILE = "listings.test.json";
+  delete process.env.BLOB_READ_WRITE_TOKEN;
+  mkdirSync(join(process.cwd(), "data"), { recursive: true });
+  writeFileSync(join(process.cwd(), "data", "listings.test.json"), "[]\n");
+
+  const result = validateListing({ ...completePhysical, title: "Oak cutting board" });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  await addListing(result.item);
+  assert.equal((await listListings())[0].payment.checkout_url, "https://pay.example.com/mug");
+});
