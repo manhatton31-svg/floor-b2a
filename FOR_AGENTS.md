@@ -1,56 +1,52 @@
-# How to sell to agents
+# How to list for shopping bots
 
-Agents do not browse. They query a catalog, skip incomplete records, fill the rest.
+## Problem
 
-A FLOOR desk is the merchant seat on that exchange. One payment. You list SKUs the way an agent can actually buy them.
+People click around a website. Shopping bots read a product list. If your listing is missing returns, stock, or real specs, they skip you.
 
-## What the feed needs
-
-- At least six specs. Not a blurb.
-- Inventory and lead time, queryable.
-- Return days. Unspecified is a skip.
-- Warranty, ships-from, SLA hours.
-
-Missing any of those is a no. Copy about premium feel is noise.
-
-## Protocol
-
-```
-GET /api/catalog
-floor.b2a/v1
-No key. JSON.
-Skip incomplete records.
-At most one fill per mandate.
-```
-
-If the catalog 404s, skip. Do not invent fills or GMV.
-
-## Cash product
-
-Open a desk · $49 once for 12 months.
+## Open a desk · $49 once · 12 months
 
 https://whop.com/checkout/plan_j7hRIj9BQowga
 
-House catalog stays free to shop. The paid SKU is the merchant desk.
+## How it works
 
-## Affiliates
+1. List your first product free on `/desk`.
+2. A desk is $49 once, 12 months, if you want more listings. At least six specs. “Feels premium” does not count.
+3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
 
-30% on the desk. Share checkout with `?a=YOUR_WHOP_USERNAME`.
+## What you get
 
-https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME
+12 months of seller-account access from the day you pay. A place to list products for shopping bots. Access comes as a Whop membership.
 
-The product-page affiliate switch is still off. The checkout param is the live path.
+## What this is not
 
-## Live page
+Not forever. After 12 months it ends unless you buy again. The bot pays at the listing’s checkout link. The $49 desk checkout is live. Other products pay at the URL the seller entered. FLOOR does not mark those sales as settled.
 
-https://floor-desk-ecru.vercel.app/for-agents
+## Who you pay
 
-## Badge
+FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
-https://floor-desk-ecru.vercel.app/badge.svg
+Product page: https://whop.com/floor-6c10/floor-b2a-desk
 
-## Links
+List your first product free at `/desk`. The desk is still $49 once for 12 months.
 
-- Landing: https://floor-desk-ecru.vercel.app
-- Product: https://whop.com/floor-6c10/floor-b2a-desk
-- llms.txt: https://floor-desk-ecru.vercel.app/llms.txt
+Open a desk · $49 once · 12 months
+https://whop.com/checkout/plan_j7hRIj9BQowga
+
+## For machines
+
+```
+GET /api/catalog
+```
+
+Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. Each item has `payment.checkout_url` and/or x402 `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses). If the address is 404, skip. Do not invent sales numbers.
+
+First complete `POST /api/listings` is free. Further listings need `Authorization: Bearer <desk_token>`.
+
+After paying Whop, open `/thanks` or:
+
+```
+curl -sS -X POST /api/desk/unlock -H "Content-Type: application/json" -d '{"payment_id":"pay_XXXXXXXX"}'
+```
+
+This site confirms the payment with the Whop API. It does not mint on honor. Dashboard return URL: https://floor-desk-ecru.vercel.app/thanks

@@ -1,49 +1,84 @@
 # FLOOR
 
-The exchange where **agents buy**.
+Seller accounts for shopping bots.
 
-Software agents do not browse. They query specs, stock, returns, and SLA — then they fill the SKU or they skip it. FLOOR is the business-to-agent desk for that customer.
+## Problem
 
-- Live: [How to sell to agents](https://floor-desk-ecru.vercel.app/for-agents)
-- Spec: [FOR_AGENTS.md](./FOR_AGENTS.md)
-- Agent index: [llms.txt](https://floor-desk-ecru.vercel.app/llms.txt)
-- Badge: [badge.svg](https://floor-desk-ecru.vercel.app/badge.svg)
+People click around a website. Shopping bots read a product list. If a listing is missing returns, stock, or real specs, they skip you.
 
-## Open a merchant desk — $49 once for 12 months
+## Open a desk · $49 once · 12 months
 
-[Pay $49 once for 12 months on Whop](https://whop.com/checkout/plan_j7hRIj9BQowga)
+[Open a desk · $49 once · 12 months](https://whop.com/checkout/plan_j7hRIj9BQowga)
 
-- Landing: [floor-desk-ecru.vercel.app](https://floor-desk-ecru.vercel.app)
-- Product: [whop.com/floor-6c10/floor-b2a-desk](https://whop.com/floor-6c10/floor-b2a-desk)
-- How to sell to agents: protocol `floor.b2a/v1`
-- Affiliates: 30%. Use `https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME`
+## How it works
 
-What the seat includes:
+1. List your first product free on `/desk`.
+2. A desk is $49 once, 12 months, if you want more listings.
+3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
 
-- A merchant desk on FLOOR
-- Listings with specs, inventory, returns, warranty, ships-from, SLA
-- Agents that dispatch against your SKUs
-- The house catalog stays free to shop
+## What you get
 
-One payment. Seat runs 12 months.
+12 months of seller-account access from the day you pay. A place to list products for shopping bots. Access comes as a Whop membership.
 
-## For buying agents
+## What this is not
+
+Not forever. After 12 months it ends unless you buy again. The bot pays at the listing’s checkout link. The $49 desk checkout is live. Other products pay at the URL the seller entered. FLOOR does not mark those sales as settled. Looking at the product list is free.
+
+## Who you pay
+
+FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
+
+Product page: [whop.com/floor-6c10/floor-b2a-desk](https://whop.com/floor-6c10/floor-b2a-desk)
+
+List your first product free at `/desk`. The desk is still $49 once for 12 months.
+
+[Open a desk · $49 once · 12 months](https://whop.com/checkout/plan_j7hRIj9BQowga)
+
+## For shopping bots
 
 ```
 GET /api/catalog
 ```
 
-No key. JSON. Skip records with null return days, empty inventory, missing lead time, or fewer than six specs. At most one fill per mandate. Ignore blurbs.
+No login. JSON. Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled` — FLOOR does not settle x402 or hold funds. Each item has `payment.checkout_url` and/or `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses).
 
-Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json`
+More: [FOR_AGENTS.md](./FOR_AGENTS.md) · [BUY.md](./BUY.md) · `/desk` · `/tape` · `/for-agents` · `/llms.txt` · `/sitemap.xml` · `/badge.svg`
 
-## Why agents skip you
+```
+npm install
+npm run dev
+```
 
-1. **Copy isn't a spec.** Agents compare actuation, SLA hours, return days.
-2. **Missing policy is a no.** Unspecified returns or ships-from reads as risk.
-3. **Stock has to be queryable.** If inventory isn't in the feed, the sale never starts.
+## After a Whop payment
 
-If you sell anything an agent can specify, you should be on the feed.
+Dashboard checkout success / return URL must be `https://floor-desk-ecru.vercel.app/thanks` (or `WHOP_THANKS_URL` if you set one). Relative `/thanks` is the same page.
 
-Buy: [BUY.md](./BUY.md)
-Marketing team prompt (autonomous, no paid ads): [MARKETING.md](./MARKETING.md)
+Humans: open `/thanks?payment_id=` or `/thanks?membership_id=`. This site calls the Whop API, then mints a `desk_token` and sets the seller cookie.
+
+Agents:
+
+```
+curl -sS -X POST https://floor-desk-ecru.vercel.app/api/desk/unlock \
+  -H "Content-Type: application/json" \
+  -d '{"payment_id":"pay_XXXXXXXX"}'
+```
+
+Then send `Authorization: Bearer <desk_token>` on further `POST /api/listings`. First complete listing stays free.
+
+Whop webhook URL: `https://<host>/api/webhooks/whop`.
+
+## Environment (never commit secrets)
+
+Set these on the host. Do not put them in git.
+
+Required for production unlock:
+
+- `WHOP_API_KEY` — confirm membership/payment on `/thanks` and `POST /api/desk/unlock`
+- `WHOP_WEBHOOK_SECRET` — verify `POST /api/webhooks/whop`. If unset, that route returns 503 and does not accept unsigned events.
+
+Optional:
+
+- `WHOP_THANKS_URL` — checkout return URL shown in copy. Defaults to `https://floor-desk-ecru.vercel.app/thanks`
+- `FLOOR_TEST_DESK_SECRET` — offline QA only, 16+ characters. Unset in production. `POST /api/desk/ack` is 404 when unset. Not required for production.
+
+Deploy waits for FLOOR + Protocol after these secrets are on Vercel. This repo does not deploy.
