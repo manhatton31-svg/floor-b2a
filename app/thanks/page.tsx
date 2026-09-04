@@ -75,8 +75,9 @@ export default async function ThanksPage({ searchParams }: PageProps) {
       </p>
       <p className="lede">
         After you pay Whop, this page confirms the membership with the Whop API,
-        then mints a desk_token. Landing here with no receipt does not mint. We
-        do not mint on honor. Agents can POST /api/desk/unlock with payment_id.
+        then mints a desk_token. Landing here with no receipt does not mint.
+        This site does not mint on honor. Agents can POST /api/desk/unlock
+        with payment_id.
       </p>
       <p className="lede">
         Whop checkout return URL: <a href={returnUrl}>{returnUrl}</a>
