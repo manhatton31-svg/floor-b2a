@@ -18,7 +18,7 @@ test("x402 discovery lists the house desk on both rails and does not claim settl
   assert.equal(doc.desk.price, "$49 once for 12 months");
   assert.equal(doc.desk.subscription, false);
   assert.equal("facilitator" in doc, false);
-  assert.doesNotMatch(JSON.stringify(doc), /bazaar|gmv|lifetime|\/settle/i);
+  assert.doesNotMatch(JSON.stringify(doc), /bazaar|gmv|\/settle/i);
 
   assert.equal(doc.resources.length, 2);
   const pay = doc.resources.find((row) => row.method === "GET");

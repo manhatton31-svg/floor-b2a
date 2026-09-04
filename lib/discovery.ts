@@ -1,5 +1,5 @@
-import { HOUSE_DESK_PAYTO, HOUSE_ITEMS } from "./catalog";
-import { expandPayment, USDC, X402_SPEC } from "./payment";
+import { HOUSE_DESK_PAYTO, HOUSE_ITEMS } from "./catalog.ts";
+import { expandPayment, USDC, X402_SPEC } from "./payment.ts";
 import {
   DESK_CHECKOUT,
   DESK_CTA,
@@ -10,7 +10,7 @@ import {
   SKIP_RULES,
   SUPPLIER,
   thanksPublicUrl,
-} from "./site";
+} from "./site.ts";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
