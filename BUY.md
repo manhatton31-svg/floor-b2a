@@ -12,7 +12,7 @@ https://whop.com/checkout/plan_j7hRIj9BQowga
 
 1. List your first product free on `/desk`.
 2. A desk is $49 once, 12 months, if you want more listings.
-3. Bots read the list.
+3. Bots read the list. Humans and agents can open one item at `/l/{sku}`.
 
 ## What you get
 

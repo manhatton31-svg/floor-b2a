@@ -108,7 +108,7 @@ Test desk mint (QA only, when FLOOR_TEST_DESK_SECRET is set): POST ${origin}/api
 
 1. GET /api/catalog or GET /api/listings
 2. Confirm \`protocol\` is \`${PROTOCOL}\`
-3. Read \`items\` (includes payment.accepts when x402 is set)
+3. Read \`items\` (includes payment.accepts when x402 is set). Human page for one item: GET /l/{sku} (HTML + embedded item JSON). Unknown sku is 404. Human index: GET /listings. Same items. No ranks.
 4. Skip if payment.checkout_url and payment.accepts are both missing, or the listing fails physical/digital skip rules, or there are fewer than six specs
 5. Pay at \`payment.checkout_url\` or via x402 \`payment.accepts\` (see https://x402.org/)
 6. GET /pay/{id} returns HTTP 402 with accepts when x402 is configured
@@ -140,6 +140,8 @@ FLOOR house desk pays at ${DESK_CHECKOUT} and x402 $49 USDC:
 
 Product list: ${origin}/api/catalog
 Listings: ${origin}/api/listings
+Per-SKU page: ${origin}/l/{sku}
+Human index: ${origin}/listings
 OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
 Seller account: ${origin}/desk
@@ -230,6 +232,30 @@ paths:
           description: Incomplete. Plain-English reason JSON.
         "402":
           description: Further listings need a desk. $49 once for 12 months.
+  /listings:
+    get:
+      summary: Human index of the same items as GET /api/catalog. No ranks.
+      operationId: getListingIndex
+      security: []
+      responses:
+        "200":
+          description: HTML list of catalog items, including the house desk.
+  /l/{sku}:
+    get:
+      summary: Public page for one catalog item. Same facts as GET /api/catalog.
+      operationId: getListingPage
+      security: []
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HTML for humans. Item JSON is embedded. Unknown sku is 404.
+        "404":
+          description: That sku is not on the list.
   /api/buy:
     post:
       summary: Start a buy. Same HTTP 402 as GET /pay/{id}, plus unpaid receipt_id. settled is false until a rail confirms.
@@ -576,6 +602,8 @@ export function agentDiscovery(origin: string) {
       thanks: `${origin}/thanks`,
       feedback: `${origin}/feedback`,
       tape: `${origin}/tape`,
+      listings: `${origin}/listings`,
+      listing: `${origin}/l/{sku}`,
       pay: `${origin}/pay/{id}`,
       for_agents: `${origin}/for-agents`,
     },

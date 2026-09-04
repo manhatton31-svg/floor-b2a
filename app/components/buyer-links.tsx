@@ -15,6 +15,9 @@ export function BuyerLinks({
       <a className="ghost" href="/api/catalog">
         Catalog
       </a>
+      <a className="ghost" href="/listings">
+        Listings
+      </a>
       <a className="ghost" href="/for-agents">
         For agents
       </a>

@@ -51,8 +51,8 @@ export function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
-export function GET(request: Request) {
-  return json(buildCatalog(new Date(), originFromRequest(request)), 200);
+export async function GET(request: Request) {
+  return json(await buildCatalog(new Date(), originFromRequest(request)), 200);
 }
 
 function replayListed(item: { owner?: { type?: string } } | undefined, sku: string, key: string) {
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
   const idempotencyKey = readIdempotencyKey(request, body);
   if (idempotencyKey) {
-    const replay = listingByIdempotencyKey(idempotencyKey);
+    const replay = await listingByIdempotencyKey(idempotencyKey);
     if (replay) return listed(replay, true);
   }
 
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   const title = typeof normalized.title === "string" ? normalized.title : "";
   const slug = title ? slugFromTitle(title) : "";
   if (slug) {
-    const existing = findListing(slug);
+    const existing = await findListing(slug);
     const replay = replayListed(existing, existing?.sku || slug, idempotencyKey);
     if (replay) return replay;
   }
@@ -97,10 +97,10 @@ export async function POST(request: Request) {
     return json(deskRequiredBody(), access.status ?? 402);
   }
 
-  const result = validateListing(normalized, [...reservedIds(), ...listingIds()]);
+  const result = validateListing(normalized, [...reservedIds(), ...(await listingIds())]);
   if (!result.ok) {
     if (result.existing_id) {
-      const existing = findListing(result.existing_id);
+      const existing = await findListing(result.existing_id);
       const replay = replayListed(existing, result.existing_id, idempotencyKey);
       if (replay) return replay;
     }
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const item = addListing(result.item);
-  if (idempotencyKey) rememberListingIdempotency(idempotencyKey, item.sku);
+  const item = await addListing(result.item, { idempotencyKey });
+  if (idempotencyKey) await rememberListingIdempotency(idempotencyKey, item.sku);
   return listed(item, access.paid);
 }

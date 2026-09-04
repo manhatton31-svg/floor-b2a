@@ -392,7 +392,9 @@ export function DeskForm({ initialItems, paid = false, showForm = true }: DeskFo
           <ul className="catalog">
             {items.map((item) => (
               <li key={item.sku}>
-                <strong>{item.title}</strong>
+                <strong>
+                  <a href={`/l/${item.sku}`}>{item.title}</a>
+                </strong>
                 <span>
                   {item.kind === "digital"
                     ? `${item.unlimited ? "unlimited" : item.inventory} · ${item.delivery || "digital"}`

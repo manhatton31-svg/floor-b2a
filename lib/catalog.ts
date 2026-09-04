@@ -1,6 +1,6 @@
-import { listListings } from "./listing-store";
-import { expandPayment, USDC, type ListingPayment } from "./payment";
-import { DESK_CHECKOUT, DESK_PRICE, PROTOCOL } from "./site";
+import { listListings } from "./listing-store.ts";
+import { expandPayment, USDC, type ListingPayment } from "./payment.ts";
+import { DESK_CHECKOUT, DESK_PRICE, PROTOCOL } from "./site.ts";
 
 /** Public receive addresses only. Never a private key. */
 export const HOUSE_DESK_PAYTO = {
@@ -108,8 +108,8 @@ export function reservedIds(): string[] {
   return HOUSE_ITEMS.map((item) => item.sku);
 }
 
-export function findCatalogItem(id: string): CatalogItem | undefined {
-  return HOUSE_ITEMS.find((item) => item.sku === id) || listListings().find((item) => item.sku === id);
+export async function findCatalogItem(id: string): Promise<CatalogItem | undefined> {
+  return HOUSE_ITEMS.find((item) => item.sku === id) || (await listListings()).find((item) => item.sku === id);
 }
 
 export function paymentSkip(payment: ListingPayment | undefined): string[] {
@@ -117,8 +117,9 @@ export function paymentSkip(payment: ListingPayment | undefined): string[] {
   return [];
 }
 
-export function buildCatalog(now = new Date(), origin?: string): CatalogResponse {
-  const items = [...HOUSE_ITEMS, ...listListings()].map((item) => {
+export async function buildCatalog(now = new Date(), origin?: string): Promise<CatalogResponse> {
+  const listed = await listListings();
+  const items = [...HOUSE_ITEMS, ...listed].map((item) => {
     const payment = expandPayment(item.payment, origin || "");
     const skip = [...(item.skip ?? []), ...paymentSkip(payment)];
     return {

@@ -9,8 +9,8 @@ export function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
-export function GET(request: Request) {
-  const catalog = buildCatalog(new Date(), originFromRequest(request));
+export async function GET(request: Request) {
+  const catalog = await buildCatalog(new Date(), originFromRequest(request));
   const response = Response.json(catalog, {
     headers: {
       ...corsHeaders,

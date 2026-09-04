@@ -15,7 +15,7 @@ type PayContext = {
 
 export async function GET(request: Request, context: PayContext) {
   const { id } = await context.params;
-  const item = findCatalogItem(id);
+  const item = await findCatalogItem(id);
   if (!item) {
     return Response.json({ ok: false, reason: "That product is not on the list." }, { status: 404, headers: corsHeaders });
   }

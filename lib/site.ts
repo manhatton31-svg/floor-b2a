@@ -84,6 +84,8 @@ export const PUBLIC_PATHS = [
   "/directories",
   "/for-agents",
   "/how-to-sell-to-agents",
+  "/listings",
+  "/l/floor-desk",
   "/api/catalog",
   "/api/listings",
   "/api/buy",

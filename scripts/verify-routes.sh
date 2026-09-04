@@ -46,6 +46,30 @@ assert len(desk["specs"]) >= 6
 print(json.dumps(body, indent=2))
 PY
 
+echo "== GET /l/floor-desk =="
+code=$(curl -sS -o /tmp/floor-l-desk.html -w "%{http_code}" "$BASE/l/floor-desk")
+test "$code" = "200"
+grep -q "FLOOR desk" /tmp/floor-l-desk.html
+grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-l-desk.html
+grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-l-desk.html
+grep -q "$PAY" /tmp/floor-l-desk.html
+grep -q 'id="floor-item"' /tmp/floor-l-desk.html
+grep -q '"sku":"floor-desk"' /tmp/floor-l-desk.html
+! grep -qiE "lifetime|gmv" /tmp/floor-l-desk.html
+
+echo "== GET /l/unknown-sku is 404 =="
+code=$(curl -sS -o /tmp/floor-l-missing.html -w "%{http_code}" "$BASE/l/not-a-real-sku")
+test "$code" = "404"
+grep -q "Not on the list" /tmp/floor-l-missing.html
+
+echo "== GET /listings =="
+code=$(curl -sS -o /tmp/floor-listings.html -w "%{http_code}" "$BASE/listings")
+test "$code" = "200"
+grep -q "FLOOR desk" /tmp/floor-listings.html
+grep -q 'href="/l/floor-desk"' /tmp/floor-listings.html
+grep -q "GET /api/catalog" /tmp/floor-listings.html
+! grep -qiE "popular|lifetime|gmv" /tmp/floor-listings.html
+
 echo "== GET /llms.txt starts with three curls =="
 curl -sS -o /tmp/floor-llms.txt -w "status:%{http_code}\n" "$BASE/llms.txt"
 python3 - <<PY
@@ -57,6 +81,8 @@ assert lines[2].startswith("curl -sS -X POST ") and "/api/listings" in lines[2],
 PY
 grep -q "$CTA" /tmp/floor-llms.txt
 grep -q "GET /api/catalog" /tmp/floor-llms.txt
+grep -q "/l/{sku}" /tmp/floor-llms.txt
+grep -q "/listings" /tmp/floor-llms.txt
 grep -q "POST" /tmp/floor-llms.txt
 grep -q "/api/listings" /tmp/floor-llms.txt
 grep -q "/api/buy" /tmp/floor-llms.txt
@@ -77,6 +103,8 @@ echo "== GET /openapi.yaml =="
 curl -sS -o /tmp/floor-openapi.yaml -w "status:%{http_code}\n" "$BASE/openapi.yaml"
 grep -q "/api/catalog" /tmp/floor-openapi.yaml
 grep -q "/api/listings" /tmp/floor-openapi.yaml
+grep -q "/l/{sku}" /tmp/floor-openapi.yaml
+grep -q "/listings" /tmp/floor-openapi.yaml
 grep -q "/api/buy" /tmp/floor-openapi.yaml
 grep -q "/api/feedback" /tmp/floor-openapi.yaml
 grep -q "/api/desk/ack" /tmp/floor-openapi.yaml
@@ -101,6 +129,8 @@ assert body["desk"]["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga
 assert body["desk"]["x402"][0]["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10"
 assert body["desk"]["x402"][1]["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL"
 assert "/desk" in body["human"]["desk"]
+assert "/listings" in body["human"]["listings"]
+assert "/l/{sku}" in body["human"]["listing"]
 assert "/thanks" in body["human"]["thanks"]
 assert "/feedback" in body["human"]["feedback"]
 assert "/api/feedback" in body["feedback"]["url"]
@@ -118,7 +148,9 @@ grep -q "sitemap" /tmp/floor-robots.txt
 echo "== GET /sitemap.xml =="
 curl -sS -o /tmp/floor-sitemap.xml -w "status:%{http_code}\n" "$BASE/sitemap.xml"
 grep -q "/api/catalog" /tmp/floor-sitemap.xml
-grep -q "/api/listings" /tmp/floor-sitemap.xml
+grep -q "/api/listings</loc>" /tmp/floor-sitemap.xml
+grep -q "/listings</loc>" /tmp/floor-sitemap.xml
+grep -q "/l/floor-desk</loc>" /tmp/floor-sitemap.xml
 grep -q "/for-agents" /tmp/floor-sitemap.xml
 grep -q "/desk" /tmp/floor-sitemap.xml
 grep -q "/thanks" /tmp/floor-sitemap.xml
@@ -137,6 +169,8 @@ test "$code" = "200"
 grep -q "$CTA" /tmp/floor-for.html
 grep -q "How an agent lists" /tmp/floor-for.html
 grep -q "POST /api/listings" /tmp/floor-for.html
+grep -q "/l/" /tmp/floor-for.html
+grep -q "/listings" /tmp/floor-for.html
 grep -q "/api/desk/unlock" /tmp/floor-for.html
 grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-for.html
 grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-for.html
@@ -380,7 +414,14 @@ catalog = json.loads(Path("/tmp/floor-catalog-after.json").read_text())
 assert any(item["title"] == title and item.get("payment", {}).get("checkout_url", "").startswith("https://") for item in catalog["items"])
 assert any(item["title"] == "FLOOR desk" for item in catalog["items"])
 assert "gmv" not in catalog
+sku = next(item["sku"] for item in catalog["items"] if item["title"] == title)
+open("/tmp/floor-free-sku.txt","w").write(sku)
 PY
+sku=$(cat /tmp/floor-free-sku.txt)
+code=$(curl -sS -o /tmp/floor-l-free.html -w "%{http_code}" "$BASE/l/$sku")
+test "$code" = "200"
+grep -q "$TITLE" /tmp/floor-l-free.html
+grep -q "https://pay.example.com/mug" /tmp/floor-l-free.html
 
 echo "== second listing without desk is refused =="
 code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-listing-second.json -w "%{http_code}" \

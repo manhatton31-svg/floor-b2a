@@ -31,7 +31,7 @@ export default async function DeskPage() {
     (stored.startsWith("desk_") && hasDeskToken(stored));
   const usedFree = jar.get(FREE_USED_COOKIE)?.value === FREE_USED_VALUE;
   const allowSubmit = paid || !usedFree;
-  const catalog = buildCatalog();
+  const catalog = await buildCatalog();
 
   return (
     <main className="wrap">

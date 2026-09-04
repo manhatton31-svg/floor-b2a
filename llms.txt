@@ -41,6 +41,8 @@ Open a desk · $49 once for 12 months
 ## For machines
 
 - GET /api/catalog
+- GET /l/{sku} — one catalog item (HTML + embedded JSON). Unknown sku is 404.
+- GET /listings — human index of the same items. No ranks.
 - Field `protocol` is `floor.b2a/v1`. No login. JSON.
 - Field `settlement` is `not_settled`.
 - First complete POST /api/listings is free. Further listings need Authorization: Bearer desk_token.

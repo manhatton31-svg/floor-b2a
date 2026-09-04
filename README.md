@@ -38,9 +38,11 @@ List your first product free at `/desk`. The desk is still $49 once for 12 month
 
 ```
 GET /api/catalog
+GET /l/{sku}
+GET /listings
 ```
 
-No login. JSON. Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled` — FLOOR does not settle x402 or hold funds. Each item has `payment.checkout_url` and/or `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses).
+No login. JSON list is `GET /api/catalog`. Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled` — FLOOR does not settle x402 or hold funds. Each item has `payment.checkout_url` and/or `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses). `/l/{sku}` is the public page for one item (HTML + embedded item JSON). `/listings` is the human index of the same items. Unknown sku is 404.
 
 More: [FOR_AGENTS.md](./FOR_AGENTS.md) · [BUY.md](./BUY.md) · `/desk` · `/tape` · `/for-agents` · `/llms.txt` · `/sitemap.xml` · `/badge.svg`
 
@@ -93,9 +95,17 @@ Required for production unlock:
 - `WHOP_API_KEY` — confirm membership/payment on `/thanks` and `POST /api/desk/unlock`
 - `WHOP_WEBHOOK_SECRET` — verify `POST /api/webhooks/whop`. If unset, that route returns 503 and does not accept unsigned events.
 
+Required so seller listings survive a Vercel redeploy:
+
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob read/write token. Create a Blob store on the FLOOR project and attach it. Listings are stored as private JSON (`floor-listings.json`). Without this token, Vercel writes under `/tmp` and those rows die on redeploy. House `floor-desk` is always in code, not in Blob.
+
 Optional:
 
 - `WHOP_THANKS_URL` — checkout return URL shown in copy. Defaults to `https://floor-desk-ecru.vercel.app/thanks`
 - `FLOOR_TEST_DESK_SECRET` — offline QA only, 16+ characters. Unset in production. `POST /api/desk/ack` is 404 when unset. Not required for production.
+- `FLOOR_LISTINGS_BLOB` — Blob pathname. Default `floor-listings.json`.
+- `FLOOR_LISTINGS_FILE` — local filename under `data/`. Default `listings.json`. Used by tests and `npm run dev` when the Blob token is unset.
+
+Local and tests use the file store (same document shape: `{ items, idempotency }`). An old bare array file still reads. Set `BLOB_READ_WRITE_TOKEN` on Vercel before the next FLOOR deploy if seller listings must persist. This repo does not deploy.
 
 Deploy waits for FLOOR + Protocol after these secrets are on Vercel. This repo does not deploy.

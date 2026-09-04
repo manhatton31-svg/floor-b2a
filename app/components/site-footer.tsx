@@ -4,6 +4,7 @@ const FOOTER_LINKS = [
   ["/thanks", "Thanks"],
   ["/feedback", "Feedback"],
   ["/for-agents", "How to list"],
+  ["/listings", "Listings"],
   ["/tape", "Tape"],
   ["/llms.txt", "llms.txt"],
   ["/openapi.yaml", "OpenAPI"],

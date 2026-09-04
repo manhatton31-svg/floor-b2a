@@ -12,6 +12,8 @@ export function AgentListDocs() {
         <p>
           POST /api/listings as application/json. CORS *. First complete
           listing is free. No token. Same facts as the human form on /desk.
+          After it is on the list, the public page is /l/{"{sku}"}. The human
+          index is /listings. GET /api/catalog stays the list API.
         </p>
         <p>
           Further listings need Authorization: Bearer {"<desk_token>"} if you

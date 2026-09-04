@@ -142,14 +142,15 @@ test("agent JSON aliases match the human form", () => {
   assert.equal(result.item.payment.accepts?.[0].payTo, "0x000000000000000000000000000000000000dEaD");
 });
 
-test("store writes appear on the catalog items array", () => {
+test("store writes appear on the catalog items array", async () => {
   process.env.FLOOR_LISTINGS_FILE = "listings.test.json";
+  delete process.env.BLOB_READ_WRITE_TOKEN;
   mkdirSync(join(process.cwd(), "data"), { recursive: true });
   writeFileSync(join(process.cwd(), "data", "listings.test.json"), "[]\n");
 
   const result = validateListing({ ...completePhysical, title: "Oak cutting board" });
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  addListing(result.item);
-  assert.equal(listListings()[0].payment.checkout_url, "https://pay.example.com/mug");
+  await addListing(result.item);
+  assert.equal((await listListings())[0].payment.checkout_url, "https://pay.example.com/mug");
 });

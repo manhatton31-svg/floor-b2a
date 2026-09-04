@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const item = findCatalogItem(item_id);
+  const item = await findCatalogItem(item_id);
   if (!item) {
     return Response.json(
       { ok: false, reason: "That product is not on the list.", field: "item_id", skip: ["no item"] },
