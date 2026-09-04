@@ -34,6 +34,6 @@ export const DIRECTORY_SUBMISSIONS: DirectorySubmission[] = [
   {
     name: "llmstxt.cc",
     url: "https://llmstxt.cc/websites/floor-desk-ecru.vercel.app",
-    note: "Live unpaid · submitted https://floor-desk-ecru.vercel.app/llms.txt · 2026-09-04",
+    note: "Live unpaid · host floor-desk-ecru.vercel.app · submitted llms.txt · categories ecommerce/marketplace/saas · 2026-09-04",
   },
 ];
