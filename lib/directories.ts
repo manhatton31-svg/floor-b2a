@@ -29,6 +29,6 @@ export const DIRECTORY_SUBMISSIONS: DirectorySubmission[] = [
   {
     name: "CurlShip",
     url: "https://curlship.com/l/2810",
-    note: "Live unpaid · FLOOR desk — $49 once for 12 months · submitted landing https://floor-desk-ecru.vercel.app · 2026-09-04",
+    note: "Live unpaid FREE tier · id 2810 · submitted https://floor-desk-ecru.vercel.app/ · FLOOR desk $49 once for 12 months",
   },
 ];
