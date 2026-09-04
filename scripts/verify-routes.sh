@@ -94,6 +94,7 @@ grep -q "/api/feedback" /tmp/floor-llms.txt
 grep -q "/api/desk/ack" /tmp/floor-llms.txt
 grep -q "/api/desk/unlock" /tmp/floor-llms.txt
 grep -q "/api/webhooks/whop" /tmp/floor-llms.txt
+grep -q "/.well-known/x402" /tmp/floor-llms.txt
 ! grep -q FLOORQA /tmp/floor-llms.txt
 ! grep -q "?a=WHOP_USERNAME" /tmp/floor-llms.txt
 ! grep -qi "money does not move" /tmp/floor-llms.txt
@@ -110,6 +111,7 @@ grep -q "/api/feedback" /tmp/floor-openapi.yaml
 grep -q "/api/desk/ack" /tmp/floor-openapi.yaml
 grep -q "/api/desk/unlock" /tmp/floor-openapi.yaml
 grep -q "/api/webhooks/whop" /tmp/floor-openapi.yaml
+grep -q "/.well-known/x402" /tmp/floor-openapi.yaml
 grep -q "checkout" /tmp/floor-openapi.yaml
 
 echo "== GET /.well-known/agent.json =="
@@ -139,6 +141,38 @@ assert "/api/desk/unlock" in body["desk_unlock"]["url"]
 assert "/api/webhooks/whop" in body["webhook"]["url"]
 assert "gmv" not in body
 assert "FLOORQA" not in json.dumps(body)
+assert "/.well-known/x402" in body["x402"]
+PY
+
+echo "== GET /.well-known/x402 =="
+curl -sS -D /tmp/floor-x402.hdr -o /tmp/floor-x402.json -w "status:%{http_code}\n" "$BASE/.well-known/x402"
+grep -i '^content-type: application/json' /tmp/floor-x402.hdr
+python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-x402.json").read_text())
+assert body["x402Version"] == 2
+assert body["kind"] == "resource-server"
+assert body["settlement"] == "not_settled"
+assert body["checkout"] == "https://whop.com/checkout/plan_j7hRIj9BQowga"
+text = json.dumps(body).lower()
+assert "facilitator" not in body
+assert "bazaar" not in text
+assert "/settle" not in text
+assert "gmv" not in text
+assert "lifetime" not in text
+urls = {row["url"] for row in body["resources"]}
+assert any(url.endswith("/pay/floor-desk") for url in urls)
+assert any(url.endswith("/api/buy") for url in urls)
+buy = next(row for row in body["resources"] if row["method"] == "POST")
+assert buy["body"] == {"item_id": "floor-desk"}
+pay = next(row for row in body["resources"] if row["method"] == "GET")
+assert pay["accepts"] == buy["accepts"]
+assert len(pay["accepts"]) == 2
+assert {row["network"] for row in pay["accepts"]} == {"base", "solana"}
+assert any(row["payTo"] == "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" for row in pay["accepts"])
+assert any(row["payTo"] == "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" for row in pay["accepts"])
+assert all(row["maxAmountRequired"] == "49000000" for row in pay["accepts"])
 PY
 
 echo "== GET /robots.txt =="
@@ -158,6 +192,7 @@ grep -q "/api/desk/unlock" /tmp/floor-sitemap.xml
 grep -q "/feedback" /tmp/floor-sitemap.xml
 grep -q "/tape" /tmp/floor-sitemap.xml
 grep -q "/badge.svg" /tmp/floor-sitemap.xml
+grep -q "/.well-known/x402" /tmp/floor-sitemap.xml
 
 echo "== GET /badge.svg =="
 curl -sS -D /tmp/floor-badge.hdr -o /tmp/floor-badge.svg -w "status:%{http_code}\n" "$BASE/badge.svg"
@@ -276,10 +311,20 @@ grep -q "FLOOR-Protocol" /tmp/floor-tape.html
 grep -q "FLOOR Sales" /tmp/floor-tape.html
 grep -q "Our own checks" /tmp/floor-tape.html
 ! grep -qiE "FLOORQA|lifetime|money does not move" /tmp/floor-tape.html
+grep -q "Grok Agent Store" /tmp/floor-tape.html
+grep -q "LLMS Central" /tmp/floor-tape.html
+grep -q "Zearches Software" /tmp/floor-tape.html
+grep -q "llmstxt.info" /tmp/floor-tape.html
+grep -q "search=floor-desk-ecru.vercel.app" /tmp/floor-tape.html
+! grep -qi MeshKore /tmp/floor-tape.html
+! grep -q '?search=floor"' /tmp/floor-tape.html
 
 echo "== GET /directories =="
 code=$(curl -sS -o /tmp/floor-dirs.html -w "%{http_code}" "$BASE/directories")
 test "$code" = "200"
+grep -q "llmstxt.info" /tmp/floor-dirs.html
+grep -q "search=floor-desk-ecru.vercel.app" /tmp/floor-dirs.html
+! grep -qi MeshKore /tmp/floor-dirs.html
 
 echo "== GET /pay/floor-desk =="
 code=$(curl -sS -D /tmp/floor-pay.hdr -o /tmp/floor-pay.json -w "%{http_code}" "$BASE/pay/floor-desk")

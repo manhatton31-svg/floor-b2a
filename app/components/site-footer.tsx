@@ -9,6 +9,7 @@ const FOOTER_LINKS = [
   ["/llms.txt", "llms.txt"],
   ["/openapi.yaml", "OpenAPI"],
   ["/.well-known/agent.json", "agent.json"],
+  ["/.well-known/x402", "x402"],
   ["/api/catalog", "Catalog"],
 ] as const;
 

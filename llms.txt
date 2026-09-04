@@ -45,6 +45,7 @@ Open a desk · $49 once for 12 months
 - GET /listings — human index of the same items. No ranks.
 - Field `protocol` is `floor.b2a/v1`. No login. JSON.
 - Field `settlement` is `not_settled`.
+- GET /.well-known/x402 lists the house desk x402 rails. This host does not settle.
 - First complete POST /api/listings is free. Further listings need Authorization: Bearer desk_token.
 - After Whop pay: POST /api/desk/unlock { payment_id } or GET /thanks?payment_id=
 - POST /api/webhooks/whop is the signed Whop webhook.

@@ -93,5 +93,6 @@ export const PUBLIC_PATHS = [
   "/llms.txt",
   "/openapi.yaml",
   "/.well-known/agent.json",
+  "/.well-known/x402",
   "/badge.svg",
 ] as const;

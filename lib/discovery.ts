@@ -1,5 +1,5 @@
-import { HOUSE_DESK_PAYTO } from "./catalog";
-import { USDC } from "./payment";
+import { HOUSE_DESK_PAYTO, HOUSE_ITEMS } from "./catalog";
+import { expandPayment, USDC, X402_SPEC } from "./payment";
 import {
   DESK_CHECKOUT,
   DESK_CTA,
@@ -106,6 +106,8 @@ Test desk mint (QA only, when FLOOR_TEST_DESK_SECRET is set): POST ${origin}/api
 
 ## For machines
 
+x402 discovery: GET ${origin}/.well-known/x402
+
 1. GET /api/catalog or GET /api/listings
 2. Confirm \`protocol\` is \`${PROTOCOL}\`
 3. Read \`items\` (includes payment.accepts when x402 is set). Human page for one item: GET /l/{sku} (HTML + embedded item JSON). Unknown sku is 404. Human index: GET /listings. Same items. No ranks.
@@ -144,6 +146,7 @@ Per-SKU page: ${origin}/l/{sku}
 Human index: ${origin}/listings
 OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
+x402 discovery: ${origin}/.well-known/x402
 Seller account: ${origin}/desk
 Thanks: ${origin}/thanks
 Unlock: POST ${origin}/api/desk/unlock
@@ -165,10 +168,19 @@ info:
     Field protocol is ${PROTOCOL}. settlement is not_settled.
     The bot pays at payment.checkout_url or payment.accepts (x402).
     FLOOR does not settle x402 or hold funds.
+    Discovery: GET /.well-known/x402.
   version: "1.0.0"
 servers:
   - url: ${origin}
 paths:
+  /.well-known/x402:
+    get:
+      summary: x402 discovery document for the house desk. No settle. settlement is not_settled.
+      operationId: getX402Discovery
+      security: []
+      responses:
+        "200":
+          description: JSON listing GET /pay/floor-desk and POST /api/buy.
   /api/catalog:
     get:
       summary: Fetch the FLOOR product list
@@ -572,6 +584,7 @@ export function agentDiscovery(origin: string) {
     },
     openapi: `${origin}/openapi.yaml`,
     llms: `${origin}/llms.txt`,
+    x402: `${origin}/.well-known/x402`,
     badge: `${origin}/badge.svg`,
     feedback: {
       url: `${origin}/api/feedback`,
@@ -634,5 +647,66 @@ export function agentDiscovery(origin: string) {
       ],
     },
     settlement: "not_settled",
+  };
+}
+
+/** Public x402 discovery. House desk only. No facilitator, settle, or Bazaar. */
+export function x402Discovery(origin: string) {
+  const desk = HOUSE_ITEMS[0];
+  const payment = expandPayment(desk.payment, origin);
+  const accepts = payment.accepts ?? [];
+  const payUrl = `${origin}/pay/${desk.sku}`;
+  const buyUrl = `${origin}/api/buy`;
+
+  return {
+    x402Version: 2,
+    kind: "resource-server" as const,
+    name: "FLOOR",
+    description:
+      "Seller accounts for shopping bots. House desk is $49 once for 12 months. FLOOR is the seller. Whop takes the $49 checkout. This host does not settle x402.",
+    protocol: PROTOCOL,
+    spec: X402_SPEC,
+    resources: [
+      {
+        url: payUrl,
+        resource: payUrl,
+        method: "GET",
+        description:
+          "FLOOR desk. $49 once for 12 months. Returns HTTP 402 with x402 accepts (Base and Solana USDC) and the Whop checkout URL. FLOOR does not settle.",
+        price: "49",
+        item_id: desk.sku,
+        checkout_url: DESK_CHECKOUT,
+        accepts,
+      },
+      {
+        url: buyUrl,
+        resource: buyUrl,
+        method: "POST",
+        description:
+          'Same HTTP 402 as GET /pay/floor-desk when the body is {"item_id":"floor-desk"}. receipt_id is an unpaid intent. settled is false.',
+        price: "49",
+        item_id: desk.sku,
+        body: { item_id: desk.sku },
+        checkout_url: DESK_CHECKOUT,
+        accepts,
+      },
+    ],
+    checkout: DESK_CHECKOUT,
+    supplier: SUPPLIER,
+    processor: PROCESSOR,
+    desk: {
+      cta: DESK_CTA,
+      price: DESK_PRICE,
+      access: "12 months of seller-account access from the day you pay",
+      expiration_days: DESK_EXPIRATION_DAYS,
+      payment: "one_payment",
+      subscription: false,
+      checkout: DESK_CHECKOUT,
+    },
+    settlement: "not_settled" as const,
+    attestation: { type: "none" as const },
+    docs: `${origin}/.well-known/agent.json`,
+    llms: `${origin}/llms.txt`,
+    catalog: `${origin}/api/catalog`,
   };
 }

@@ -18,7 +18,7 @@ Christopher Hatton (manhatton311) connected the Whop rail and does nothing else.
 Required specialists (create them if missing):
 1. **Watch** — weekly Whop payments for biz_vhHQTkApK8ol7E / plan_j7hRIj9BQowga.
 2. **Closer** — fires on Whop sale email; confirm the payment; one-line ping.
-3. **Protocol** — keep /llms.txt, /openapi.yaml, /.well-known/agent.json, GitHub spec, agent-list PRs live.
+3. **Protocol** — keep /llms.txt, /openapi.yaml, /.well-known/agent.json, /.well-known/x402, GitHub spec, agent-list PRs live.
 4. **Desk rail** — checkout + product page + forum stay current; ignore Whop blueprints and $20/day ads.
 5. **Demand** — public answers when people ask how to sell to agents; GitHub/forum only; no spam.
 

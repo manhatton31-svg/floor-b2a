@@ -40,9 +40,10 @@ List your first product free at `/desk`. The desk is still $49 once for 12 month
 GET /api/catalog
 GET /l/{sku}
 GET /listings
+GET /.well-known/x402
 ```
 
-No login. JSON list is `GET /api/catalog`. Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled` — FLOOR does not settle x402 or hold funds. Each item has `payment.checkout_url` and/or `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses). `/l/{sku}` is the public page for one item (HTML + embedded item JSON). `/listings` is the human index of the same items. Unknown sku is 404.
+No login. JSON list is `GET /api/catalog`. Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled` — FLOOR does not settle x402 or hold funds. Each item has `payment.checkout_url` and/or `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses). `GET /.well-known/x402` is the discovery document for those house rails (`GET /pay/floor-desk` and `POST /api/buy` with `{"item_id":"floor-desk"}`). `/l/{sku}` is the public page for one item (HTML + embedded item JSON). `/listings` is the human index of the same items. Unknown sku is 404.
 
 More: [FOR_AGENTS.md](./FOR_AGENTS.md) · [BUY.md](./BUY.md) · `/desk` · `/tape` · `/for-agents` · `/llms.txt` · `/sitemap.xml` · `/badge.svg`
 
@@ -109,3 +110,15 @@ Optional:
 Local and tests use the file store (same document shape: `{ items, idempotency }`). An old bare array file still reads. Set `BLOB_READ_WRITE_TOKEN` on Vercel before the next FLOOR deploy if seller listings must persist. This repo does not deploy.
 
 Deploy waits for FLOOR + Protocol after these secrets are on Vercel. This repo does not deploy.
+
+## After a host serves `/.well-known/x402`
+
+agent402.tools register failed on ecru while this path was 404. After someone deploys this host (not this PR), re-register the bare origin:
+
+```
+curl -sS -X POST https://agent402.tools/api/index/register \
+  -H "Content-Type: application/json" \
+  -d '{"origin":"https://floor-desk-ecru.vercel.app"}'
+```
+
+Submit the origin only. Do not add a path. Confirm `GET https://floor-desk-ecru.vercel.app/.well-known/x402` is 200 JSON before that POST. This repo still does not deploy and does not touch ecru.
