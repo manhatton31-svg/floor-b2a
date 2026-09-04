@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { dataFile, readJsonFile, writeJsonFile } from "./data-file.ts";
 import { DESK_TOKEN_COOKIE, tokenFromCookie } from "./desk-ack.ts";
+import { DESK_PLAN_ID, DESK_PRODUCT_ID } from "./site.ts";
 
 type TokenRow = {
   hash: string;
@@ -13,11 +14,23 @@ type TokenRow = {
   settled?: boolean;
 };
 
+export type DeskEntitlement = {
+  payment_id?: string;
+  membership_id?: string;
+  plan: string;
+  product_id?: string;
+  amount: number;
+  cash: boolean;
+  settled: boolean;
+  at: string;
+};
+
 type TokenStore = {
   tokens: TokenRow[];
   memberships: Record<string, string>;
   payments: Record<string, string>;
   webhooks: string[];
+  entitlements: DeskEntitlement[];
 };
 
 export type VerifiedGrant = {
@@ -42,13 +55,13 @@ function storePath(): string {
 }
 
 function emptyStore(): TokenStore {
-  return { tokens: [], memberships: {}, payments: {}, webhooks: [] };
+  return { tokens: [], memberships: {}, payments: {}, webhooks: [], entitlements: [] };
 }
 
 function readStore(): TokenStore {
   const parsed = readJsonFile<unknown>(storePath(), emptyStore());
   if (Array.isArray(parsed)) {
-    return { tokens: parsed.filter(isTokenRow), memberships: {}, payments: {}, webhooks: [] };
+    return { tokens: parsed.filter(isTokenRow), memberships: {}, payments: {}, webhooks: [], entitlements: [] };
   }
   if (!parsed || typeof parsed !== "object") return emptyStore();
   const rec = parsed as Partial<TokenStore>;
@@ -57,6 +70,7 @@ function readStore(): TokenStore {
     memberships: asStringMap(rec.memberships),
     payments: asStringMap(rec.payments),
     webhooks: Array.isArray(rec.webhooks) ? rec.webhooks.filter((id): id is string => typeof id === "string") : [],
+    entitlements: Array.isArray(rec.entitlements) ? rec.entitlements.filter(isEntitlement) : [],
   };
 }
 
@@ -66,6 +80,16 @@ function isTokenRow(row: unknown): row is TokenRow {
     typeof row === "object" &&
     typeof (row as TokenRow).hash === "string" &&
     typeof (row as TokenRow).item_id === "string"
+  );
+}
+
+function isEntitlement(row: unknown): row is DeskEntitlement {
+  return (
+    !!row &&
+    typeof row === "object" &&
+    typeof (row as DeskEntitlement).plan === "string" &&
+    ((row as DeskEntitlement).plan === DESK_PLAN_ID ||
+      (row as DeskEntitlement).product_id === DESK_PRODUCT_ID)
   );
 }
 
@@ -84,6 +108,7 @@ function writeStore(store: TokenStore) {
     memberships: store.memberships,
     payments: store.payments,
     webhooks: store.webhooks.slice(-200),
+    entitlements: store.entitlements.slice(-500),
   });
 }
 
@@ -172,6 +197,94 @@ export function rememberWebhookId(id: string): boolean {
   store.webhooks.push(raw);
   writeStore(store);
   return false;
+}
+
+export type EntitlementGrant = {
+  payment_id?: string;
+  membership_id?: string;
+  plan_id?: string;
+  product_id?: string;
+  amount?: number;
+  cash: boolean;
+  settled: boolean;
+};
+
+function entitlementKeyMatch(row: DeskEntitlement, payment_id?: string, membership_id?: string): boolean {
+  if (payment_id && row.payment_id === payment_id) return true;
+  if (membership_id && row.membership_id === membership_id) return true;
+  return false;
+}
+
+/** Persist a signed webhook grant so /thanks or unlock can mint desk_token later. */
+export function recordEntitlement(grant: EntitlementGrant): DeskEntitlement | null {
+  const payment_id = grant.payment_id?.trim() || undefined;
+  const membership_id = grant.membership_id?.trim() || undefined;
+  const product_id = grant.product_id?.trim() || undefined;
+  const plan = grant.plan_id?.trim() || (product_id === DESK_PRODUCT_ID ? DESK_PLAN_ID : "");
+  if (!payment_id && !membership_id) return null;
+  if (plan !== DESK_PLAN_ID && product_id !== DESK_PRODUCT_ID) return null;
+
+  const next: DeskEntitlement = {
+    payment_id,
+    membership_id,
+    plan: plan || DESK_PLAN_ID,
+    product_id,
+    amount: typeof grant.amount === "number" && Number.isFinite(grant.amount) ? grant.amount : 0,
+    cash: grant.cash,
+    settled: grant.settled,
+    at: new Date().toISOString(),
+  };
+
+  const store = readStore();
+  const index = store.entitlements.findIndex((row) => entitlementKeyMatch(row, payment_id, membership_id));
+  if (index >= 0) {
+    const prior = store.entitlements[index];
+    store.entitlements[index] = {
+      ...prior,
+      ...next,
+      payment_id: next.payment_id || prior.payment_id,
+      membership_id: next.membership_id || prior.membership_id,
+      product_id: next.product_id || prior.product_id,
+    };
+    writeStore(store);
+    return store.entitlements[index];
+  }
+  store.entitlements.push(next);
+  writeStore(store);
+  return next;
+}
+
+export function findEntitlement(ids: {
+  payment_id?: string;
+  membership_id?: string;
+  receipt_id?: string;
+  code?: string;
+}): DeskEntitlement | null {
+  const receipt = ids.receipt_id?.trim() || "";
+  const code = ids.code?.trim() || "";
+  const payment_id =
+    ids.payment_id?.trim() ||
+    (receipt.startsWith("pay_") ? receipt : "") ||
+    (code.startsWith("pay_") ? code : "") ||
+    "";
+  const membership_id =
+    ids.membership_id?.trim() ||
+    (receipt.startsWith("mem_") ? receipt : "") ||
+    (code.startsWith("mem_") ? code : "") ||
+    "";
+  if (!payment_id && !membership_id) return null;
+  const store = readStore();
+  return store.entitlements.find((row) => entitlementKeyMatch(row, payment_id || undefined, membership_id || undefined)) || null;
+}
+
+export function grantFromEntitlement(row: DeskEntitlement): VerifiedGrant {
+  return {
+    membership_id: row.membership_id,
+    payment_id: row.payment_id,
+    cash: row.cash,
+    settled: row.settled,
+    item_id: "floor-desk",
+  };
 }
 
 export function hasDeskToken(token: string): boolean {

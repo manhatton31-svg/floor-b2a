@@ -6,7 +6,7 @@ import { bearerToken, hasDeskToken } from "./desk-token";
 
 export const SECOND_LISTING_STATUS = 402;
 
-export const SECOND_LISTING_REASON = `${DESK_CTA}. Further listings need a desk. After paying Whop, open /thanks or POST /api/desk/unlock with payment_id, then send Authorization: Bearer <desk_token>. First listing needs no token. Pay the house desk at ${DESK_CHECKOUT} or the house x402 rails. This site does not mint on honor.`;
+export const SECOND_LISTING_REASON = `${DESK_CTA}. Further listings need a desk. Paid desks unlock after Whop confirms (webhook). Agents: POST /api/desk/unlock with payment_id, then send Authorization: Bearer <desk_token>. First listing needs no token. Pay the house desk at ${DESK_CHECKOUT} or the house x402 rails. This site does not mint on honor.`;
 
 export function listingAccess(request: Request): {
   allowed: boolean;

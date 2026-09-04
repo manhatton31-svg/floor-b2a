@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { findEntitlement } from "./desk-token.ts";
 import { DESK_PLAN_ID, DESK_PRODUCT_ID } from "./site.ts";
 
 export const WHOP_API = "https://api.whop.com/api/v1";
@@ -301,6 +302,37 @@ export async function whopGet(path: string): Promise<{ ok: true; data: unknown }
   } catch {
     return { ok: false, reason: "Could not reach Whop." };
   }
+}
+
+export function grantFromStoredEntitlement(ids: WhopIds): WhopGrant | null {
+  const stored = findEntitlement(ids);
+  if (!stored || !isDeskPlan(stored.plan, stored.product_id || "")) return null;
+  return {
+    ok: true,
+    payment_id: stored.payment_id,
+    membership_id: stored.membership_id,
+    plan_id: stored.plan,
+    product_id: stored.product_id,
+    amount: stored.amount,
+    cash: stored.cash,
+    settled: stored.settled,
+    status: "recorded",
+  };
+}
+
+/** Webhook entitlement first. Whop API is the optional fast path when the id is present but no row yet. */
+export async function resolveDeskGrant(ids: WhopIds): Promise<WhopGrant | WhopFail> {
+  const receipt = ids.receipt_id || "";
+  if (classifyId(receipt) === "receipt") {
+    return {
+      ok: false,
+      reason: "That receipt_id is an unpaid buy intent, not a Whop payment. Pay the desk checkout first.",
+      field: "receipt_id",
+    };
+  }
+  const stored = grantFromStoredEntitlement(ids);
+  if (stored) return stored;
+  return verifyDeskPurchase(ids);
 }
 
 export async function verifyDeskPurchase(ids: WhopIds): Promise<WhopGrant | WhopFail> {

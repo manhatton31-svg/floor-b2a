@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { unlinkSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
-import { mintVerifiedDeskToken } from "./desk-token.ts";
+import { findEntitlement, mintVerifiedDeskToken, recordEntitlement } from "./desk-token.ts";
 import {
   classifyId,
   grantFromWebhookEvent,
@@ -121,6 +121,31 @@ test("webhook signature accepts the full ws_ secret", () => {
     verifyWhopSignature({ secret, id, timestamp: String(Number(timestamp) - 400), signature, body }).ok,
     false,
   );
+});
+
+test("stored entitlement is the later mint source of truth", () => {
+  const file = `desk-tokens-ent-${process.pid}-${Date.now()}.json`;
+  process.env.FLOOR_TOKENS_FILE = file;
+  try {
+    const stored = recordEntitlement({
+      payment_id: "pay_later",
+      membership_id: "mem_later",
+      plan_id: PLAN,
+      cash: true,
+      settled: true,
+      amount: 49,
+    });
+    assert.ok(stored);
+    assert.equal(findEntitlement({ payment_id: "pay_later" })?.plan, PLAN);
+    assert.equal(findEntitlement({ membership_id: "mem_later" })?.payment_id, "pay_later");
+    assert.equal(findEntitlement({ payment_id: "pay_missing" }), null);
+  } finally {
+    try {
+      unlinkSync(join(process.cwd(), "data", file));
+    } catch {
+      // ignore
+    }
+  }
 });
 
 test("verified mint is idempotent on membership_id and payment_id", () => {

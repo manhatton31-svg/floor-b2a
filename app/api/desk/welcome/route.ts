@@ -6,7 +6,7 @@ import {
 } from "@/lib/desk-ack";
 import { hasDeskToken, mintVerifiedDeskToken } from "@/lib/desk-token";
 import { redirectTo } from "@/lib/redirect";
-import { verifyDeskPurchase } from "@/lib/whop";
+import { resolveDeskGrant } from "@/lib/whop";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     return redirectTo(request, "/thanks");
   }
 
-  const grant = await verifyDeskPurchase(ids);
+  const grant = await resolveDeskGrant(ids);
   if (!grant.ok) {
     const why = encodeURIComponent(grant.reason.slice(0, 240));
     return redirectTo(request, `/thanks?unpaid=1&why=${why}`);

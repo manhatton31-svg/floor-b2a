@@ -16,10 +16,11 @@ export function AgentListDocs() {
         <p>
           Further listings need Authorization: Bearer {"<desk_token>"} if you
           have one, or the human cookie on /desk. {DESK_CTA}. Checkout{" "}
-          <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>. After paying Whop, open
-          /thanks or POST /api/desk/unlock with payment_id. This site does not
-          mint on honor. QA may mint only via POST /api/desk/ack when
-          FLOOR_TEST_DESK_SECRET is set. That path is optional offline QA.
+          <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>. After paying Whop, POST
+          /api/desk/unlock with payment_id, or open /thanks?payment_id=. Signed
+          webhooks record entitlement first. This site does not mint on honor.
+          QA may mint only via POST /api/desk/ack when FLOOR_TEST_DESK_SECRET is
+          set. That path is optional offline QA.
         </p>
         <p>
           POST /api/buy with {"{ item_id }"} returns the same HTTP 402 as GET

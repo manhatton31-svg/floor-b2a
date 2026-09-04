@@ -2,8 +2,10 @@ import { DESK_CHECKOUT, DESK_PRODUCT } from "@/lib/site";
 
 export function BuyerLinks({
   paidCheckout = false,
+  showCheckout = true,
 }: {
   paidCheckout?: boolean;
+  showCheckout?: boolean;
 }) {
   return (
     <div className="row">
@@ -19,9 +21,11 @@ export function BuyerLinks({
       <a className="ghost" href="/feedback">
         Feedback
       </a>
-      <a className="ghost" href={DESK_CHECKOUT}>
-        {paidCheckout ? "Checkout (already paid)" : "Checkout"}
-      </a>
+      {showCheckout ? (
+        <a className="ghost" href={DESK_CHECKOUT}>
+          {paidCheckout ? "Checkout (already paid)" : "Checkout"}
+        </a>
+      ) : null}
       <a className="ghost" href={DESK_PRODUCT}>
         Product page
       </a>

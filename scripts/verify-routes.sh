@@ -184,16 +184,20 @@ echo "== GET /thanks =="
 code=$(curl -sS -o /tmp/floor-thanks.html -w "%{http_code}" "$BASE/thanks")
 test "$code" = "200"
 grep -q "You have 12 months" /tmp/floor-thanks.html
+grep -q "12 months on Whop" /tmp/floor-thanks.html
+grep -q "once access is active" /tmp/floor-thanks.html
+grep -q "does not ask you to paste" /tmp/floor-thanks.html
 grep -q "/desk" /tmp/floor-thanks.html
 grep -q "/api/catalog" /tmp/floor-thanks.html
 grep -q "/for-agents" /tmp/floor-thanks.html
 grep -q "/feedback" /tmp/floor-thanks.html
 grep -q "$PAY" /tmp/floor-thanks.html
+grep -q "If you have not paid yet" /tmp/floor-thanks.html
 grep -q "whop.com/floor-6c10/floor-b2a-desk" /tmp/floor-thanks.html
-grep -q "does not mint on honor" /tmp/floor-thanks.html
-grep -q "/api/desk/unlock" /tmp/floor-thanks.html
 grep -q "floor-desk-ecru.vercel.app/thanks" /tmp/floor-thanks.html
+! grep -qiE 'name="(payment_id|membership_id|receipt_id)"' /tmp/floor-thanks.html
 ! grep -qiE "lifetime|FLOORQA|gmv" /tmp/floor-thanks.html
+! grep -qiE "money does not move|keep forever" /tmp/floor-thanks.html
 
 echo "== GET /feedback =="
 code=$(curl -sS -o /tmp/floor-feedback.html -w "%{http_code}" "$BASE/feedback")
@@ -503,11 +507,13 @@ echo "== locked /desk after free listing shows \$49 checkout =="
 code=$(curl -sS -c "$jar" -b "$jar" -o /tmp/floor-desk-locked.html -w "%{http_code}" "$BASE/desk")
 test "$code" = "200"
 grep -q "Further listings need a desk" /tmp/floor-desk-locked.html
+grep -q "Paid desks unlock after Whop confirms" /tmp/floor-desk-locked.html
 grep -q "$CTA" /tmp/floor-desk-locked.html
 grep -q "$PAY" /tmp/floor-desk-locked.html
 grep -q "How bots pay you" /tmp/floor-desk-locked.html
 grep -q 'href="/feedback"' /tmp/floor-desk-locked.html
 ! grep -q "I paid \$49" /tmp/floor-desk-locked.html
+! grep -qiE 'name="(payment_id|membership_id|receipt_id)"' /tmp/floor-desk-locked.html
 
 echo "== digital listing after test desk ack =="
 if [ -z "${FLOOR_TEST_DESK_SECRET:-}" ]; then

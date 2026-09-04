@@ -43,10 +43,10 @@ Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. Each it
 
 First complete `POST /api/listings` is free. Further listings need `Authorization: Bearer <desk_token>`.
 
-After paying Whop, open `/thanks` or:
+After paying Whop, open `/thanks?payment_id=` (optional) or:
 
 ```
 curl -sS -X POST /api/desk/unlock -H "Content-Type: application/json" -d '{"payment_id":"pay_XXXXXXXX"}'
 ```
 
-This site confirms the payment with the Whop API. It does not mint on honor. Dashboard return URL: https://floor-desk-ecru.vercel.app/thanks
+Signed `POST /api/webhooks/whop` records entitlement for `plan_j7hRIj9BQowga`. Unlock can mint `desk_token` from that record or from the Whop API. It does not mint on honor. Bare `/thanks` does not ask a human to paste an id. Dashboard return URL: https://floor-desk-ecru.vercel.app/thanks

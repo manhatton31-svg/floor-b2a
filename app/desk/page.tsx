@@ -77,8 +77,8 @@ export default async function DeskPage() {
             <h2>Further listings need a desk.</h2>
             <p className="lede">
               Your first product is on the list. Open a desk. $49 once for 12
-              months if you want to list more. After you pay Whop, open /thanks
-              or POST /api/desk/unlock with payment_id. A checkbox is not proof.
+              months if you want to list more. Paid desks unlock after Whop
+              confirms. Then this page keeps the listing form.
             </p>
             <p className="lede">
               Checkout: <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>
@@ -87,8 +87,8 @@ export default async function DeskPage() {
               <a className="cta" href={DESK_CHECKOUT}>
                 {DESK_CTA}
               </a>
-              <a className="ghost" href="/thanks">
-                After you pay
+              <a className="ghost" href="/feedback">
+                Feedback
               </a>
             </div>
           </section>

@@ -53,7 +53,9 @@ npm run dev
 
 Dashboard checkout success / return URL must be `https://floor-desk-ecru.vercel.app/thanks` (or `WHOP_THANKS_URL` if you set one). Relative `/thanks` is the same page.
 
-Humans: open `/thanks?payment_id=` or `/thanks?membership_id=`. This site calls the Whop API, then mints a `desk_token` and sets the seller cookie.
+Unlock source of truth is the signed Whop webhook. `?payment_id=` on `/thanks` is an optional fast path. Bare `/thanks` does not ask a human to paste an id. If they just paid, they open `/desk` once access is active.
+
+Humans: if checkout sends `/thanks?payment_id=` or `/thanks?membership_id=`, this site confirms, mints a `desk_token`, and sets the seller cookie.
 
 Agents:
 
@@ -65,7 +67,22 @@ curl -sS -X POST https://floor-desk-ecru.vercel.app/api/desk/unlock \
 
 Then send `Authorization: Bearer <desk_token>` on further `POST /api/listings`. First complete listing stays free.
 
-Whop webhook URL: `https://<host>/api/webhooks/whop`.
+Whop webhook URL: `https://<host>/api/webhooks/whop`. On signed `payment.succeeded` / `membership.activated` for `plan_j7hRIj9BQowga`, the site records entitlement (`payment_id`, `membership_id`, plan) so unlock can mint later. Unsigned bodies are rejected.
+
+Manual webhook checks (local, `WHOP_WEBHOOK_SECRET` set):
+
+```
+# unsigned body → 401
+curl -sS -D- -o- -X POST http://127.0.0.1:3000/api/webhooks/whop \
+  -H 'Content-Type: application/json' \
+  -H 'webhook-id: msg_unsigned' \
+  -H 'webhook-timestamp: 1' \
+  -H 'webhook-signature: v1,nope' \
+  -d '{"type":"payment.succeeded"}'
+
+# secret unset → 503
+# happy path: signed payment.succeeded records entitlement (see npm test)
+```
 
 ## Environment (never commit secrets)
 

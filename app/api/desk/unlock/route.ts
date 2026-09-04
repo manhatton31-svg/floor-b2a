@@ -1,8 +1,8 @@
 import { corsHeaders } from "@/lib/discovery";
 import { deskAckCookie, deskRevealCookie, deskTokenCookie } from "@/lib/desk-ack";
-import { mintVerifiedDeskToken } from "@/lib/desk-token";
+import { findEntitlement, mintVerifiedDeskToken } from "@/lib/desk-token";
 import { PROTOCOL, thanksPublicUrl } from "@/lib/site";
-import { idsFromUnknown, verifyDeskPurchase, whopApiKey } from "@/lib/whop";
+import { idsFromUnknown, resolveDeskGrant, whopApiKey } from "@/lib/whop";
 
 export const dynamic = "force-dynamic";
 
@@ -24,20 +24,6 @@ export function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  if (!whopApiKey()) {
-    return json(
-      {
-        ok: false,
-        reason: "WHOP_API_KEY is not set. This site cannot confirm a Whop membership.",
-        field: "payment_id",
-        skip: ["no WHOP_API_KEY"],
-        settled: false,
-        settlement: "not_settled",
-      },
-      503,
-    );
-  }
-
   let body: unknown = {};
   try {
     body = await request.json();
@@ -60,7 +46,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const grant = await verifyDeskPurchase(ids);
+  if (!findEntitlement(ids) && !whopApiKey()) {
+    return json(
+      {
+        ok: false,
+        reason: "WHOP_API_KEY is not set. This site cannot confirm a Whop membership.",
+        field: "payment_id",
+        skip: ["no WHOP_API_KEY"],
+        settled: false,
+        settlement: "not_settled",
+      },
+      503,
+    );
+  }
+
+  const grant = await resolveDeskGrant(ids);
   if (!grant.ok) {
     return json(
       {

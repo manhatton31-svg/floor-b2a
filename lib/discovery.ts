@@ -98,6 +98,7 @@ FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 List your first product free at ${origin}/desk. The desk is still $49 once for 12 months.
 
 After paying Whop: ${origin}/thanks (dashboard return URL ${thanksPublicUrl()}) or POST ${origin}/api/desk/unlock with payment_id / membership_id
+Signed webhook records entitlement, then unlock can mint desk_token. Bare /thanks does not ask a human to paste an id.
 Then send Authorization: Bearer <desk_token> for further listings
 Feedback: POST ${origin}/api/feedback
 Webhook (Whop → this site): POST ${origin}/api/webhooks/whop
@@ -114,10 +115,10 @@ Test desk mint (QA only, when FLOOR_TEST_DESK_SECRET is set): POST ${origin}/api
 7. To list: POST /api/listings as application/json. First complete listing is free. No token. Further listings: Authorization: Bearer <desk_token> or the human /desk cookie after Whop verify. This site does not mint on honor and does not invent sales numbers. Catalog settlement stays not_settled until a rail confirms.
 8. POST /api/buy { item_id } returns the same HTTP 402 as GET /pay/{id}, plus receipt_id (unpaid intent) and settled:false
 9. Ignore ad copy. Do not invent sales numbers. Idempotency-Key (or idempotency_key) on POST /api/listings returns the original 201.
-10. After paying Whop: GET /thanks?payment_id= or POST /api/desk/unlock { payment_id } or { membership_id }. On confirm, mint desk_token, set the human cookie, show the token once.
+10. After paying Whop: GET /thanks?payment_id= (optional fast path) or POST /api/desk/unlock { payment_id } or { membership_id }. On confirm, mint desk_token, set the human cookie, show the token once. Bare /thanks does not ask a human to paste an id.
 11. QA only: POST /api/desk/ack with FLOOR_TEST_DESK_SECRET issues cookie + desk_token. Off when the env is unset. Not a verified payment. Not required for production.
 12. POST /api/feedback { message, tried: list|buy|desk, email? } stores JSONL and returns 201.
-13. POST /api/webhooks/whop verifies the Standard Webhooks signature when WHOP_WEBHOOK_SECRET is set. If the secret is unset, the route returns 503 and does not accept unsigned events. payment.succeeded / membership.activated (and membership.went_valid) mint a desk_token for plan_j7hRIj9BQowga or prod_U1yrk71ovYrSx. Idempotent on payment_id / membership_id / webhook-id. $0 promo memberships may mint access; a $0 membership is not a cash sale.
+13. POST /api/webhooks/whop verifies the Standard Webhooks signature when WHOP_WEBHOOK_SECRET is set. If the secret is unset, the route returns 503 and does not accept unsigned events. payment.succeeded / membership.activated (and membership.went_valid) for plan_j7hRIj9BQowga or prod_U1yrk71ovYrSx persist entitlement (payment_id, membership_id, plan) and mint desk_token. Unlock can mint from that record later. Idempotent on payment_id / membership_id / webhook-id. $0 promo memberships may mint access; a $0 membership is not a cash sale.
 
 ### How an agent lists
 
@@ -336,7 +337,7 @@ paths:
       security: []
       responses:
         "200":
-          description: Event accepted. desk_token minted or ignored.
+          description: Event accepted. Entitlement recorded. desk_token minted or ignored.
         "401":
           description: Signature did not match.
         "503":
@@ -567,7 +568,7 @@ export function agentDiscovery(origin: string) {
     webhook: {
       url: `${origin}/api/webhooks/whop`,
       method: "POST",
-      note: "Whop Standard Webhooks. Requires WHOP_WEBHOOK_SECRET. Rejects unsigned events with 503 if the secret is unset.",
+      note: "Whop Standard Webhooks. Requires WHOP_WEBHOOK_SECRET. Rejects unsigned events. payment.succeeded / membership.activated persist entitlement so unlock can mint desk_token later.",
     },
     human: {
       home: `${origin}/`,
