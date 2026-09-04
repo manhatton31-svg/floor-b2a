@@ -19,6 +19,6 @@ export const DIRECTORY_SUBMISSIONS: DirectorySubmission[] = [
   {
     name: "Zearches Software & SaaS Tools",
     url: "https://zearches.com/directory.php?slug=software-saas",
-    note: "Submitted landing https://floor-desk-ecru.vercel.app · listing present · stamped 2026-09-03 17:34",
+    note: "Submitted landing https://floor-desk-ecru.vercel.app · live unpaid listing · first seen stamped 2026-09-03 17:34",
   },
 ];
