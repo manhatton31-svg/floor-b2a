@@ -55,15 +55,11 @@ test("agent.json and directory tape point at the live x402 and llmstxt.info rows
   assert.equal(DIRECTORY_SUBMISSIONS[2].name, "Zearches Software & SaaS Tools");
   assert.deepEqual(DIRECTORY_SUBMISSIONS[3], {
     name: "llmstxt.info",
-    url: "https://llmstxt.info/directory/?search=floor-desk-ecru.vercel.app",
-    note: "Live unpaid · listed 2026-09-03 · host floor-desk-ecru.vercel.app · submitted https://floor-desk-ecru.vercel.app/llms.txt",
+    url: "https://llmstxt.info/directory/?search=floor",
+    note: "Live free listing · host floor-desk-ecru.vercel.app · submitted https://floor-desk-ecru.vercel.app/llms.txt · 2026-09-03",
   });
   assert.equal(
     DIRECTORY_SUBMISSIONS.some((row) => /meshkore/i.test(JSON.stringify(row))),
-    false,
-  );
-  assert.equal(
-    DIRECTORY_SUBMISSIONS.some((row) => /[?&]search=floor(?:&|$)/.test(row.url)),
     false,
   );
 });

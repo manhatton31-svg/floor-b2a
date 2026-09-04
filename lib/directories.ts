@@ -23,7 +23,7 @@ export const DIRECTORY_SUBMISSIONS: DirectorySubmission[] = [
   },
   {
     name: "llmstxt.info",
-    url: "https://llmstxt.info/directory/?search=floor-desk-ecru.vercel.app",
-    note: "Live unpaid · listed 2026-09-03 · host floor-desk-ecru.vercel.app · submitted https://floor-desk-ecru.vercel.app/llms.txt",
+    url: "https://llmstxt.info/directory/?search=floor",
+    note: "Live free listing · host floor-desk-ecru.vercel.app · submitted https://floor-desk-ecru.vercel.app/llms.txt · 2026-09-03",
   },
 ];
