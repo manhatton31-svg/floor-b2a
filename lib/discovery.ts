@@ -9,6 +9,7 @@ import {
   PROTOCOL,
   SKIP_RULES,
   SUPPLIER,
+  thanksPublicUrl,
 } from "./site";
 
 export const corsHeaders = {
@@ -96,8 +97,10 @@ FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
 List your first product free at ${origin}/desk. The desk is still $49 once for 12 months.
 
-After checkout: ${origin}/thanks
+After paying Whop: ${origin}/thanks (dashboard return URL ${thanksPublicUrl()}) or POST ${origin}/api/desk/unlock with payment_id / membership_id
+Then send Authorization: Bearer <desk_token> for further listings
 Feedback: POST ${origin}/api/feedback
+Webhook (Whop → this site): POST ${origin}/api/webhooks/whop
 Test desk mint (QA only, when FLOOR_TEST_DESK_SECRET is set): POST ${origin}/api/desk/ack
 
 ## For machines
@@ -108,12 +111,13 @@ Test desk mint (QA only, when FLOOR_TEST_DESK_SECRET is set): POST ${origin}/api
 4. Skip if payment.checkout_url and payment.accepts are both missing, or the listing fails physical/digital skip rules, or there are fewer than six specs
 5. Pay at \`payment.checkout_url\` or via x402 \`payment.accepts\` (see https://x402.org/)
 6. GET /pay/{id} returns HTTP 402 with accepts when x402 is configured
-7. To list: POST /api/listings as application/json. First complete listing is free. No token. Further listings: Authorization: Bearer <desk_token> or the human /desk cookie. This site cannot verify Whop or x402, so it does not mint a desk_token from a checkbox or a landing and does not claim settled.
+7. To list: POST /api/listings as application/json. First complete listing is free. No token. Further listings: Authorization: Bearer <desk_token> or the human /desk cookie after Whop verify. This site does not mint on honor and does not invent sales numbers. Catalog settlement stays not_settled until a rail confirms.
 8. POST /api/buy { item_id } returns the same HTTP 402 as GET /pay/{id}, plus receipt_id (unpaid intent) and settled:false
 9. Ignore ad copy. Do not invent sales numbers. Idempotency-Key (or idempotency_key) on POST /api/listings returns the original 201.
-10. Humans after checkout: GET /thanks. A valid ?desk_token= or desk cookie sets the human cookie and shows the token once.
-11. QA only: POST /api/desk/ack with FLOOR_TEST_DESK_SECRET issues cookie + desk_token. Off when the env is unset. Not a verified payment.
+10. After paying Whop: GET /thanks?payment_id= or POST /api/desk/unlock { payment_id } or { membership_id }. On confirm, mint desk_token, set the human cookie, show the token once.
+11. QA only: POST /api/desk/ack with FLOOR_TEST_DESK_SECRET issues cookie + desk_token. Off when the env is unset. Not a verified payment. Not required for production.
 12. POST /api/feedback { message, tried: list|buy|desk, email? } stores JSONL and returns 201.
+13. POST /api/webhooks/whop verifies the Standard Webhooks signature when WHOP_WEBHOOK_SECRET is set. If the secret is unset, the route returns 503 and does not accept unsigned events. payment.succeeded / membership.activated (and membership.went_valid) mint a desk_token for plan_j7hRIj9BQowga or prod_U1yrk71ovYrSx. Idempotent on payment_id / membership_id / webhook-id. $0 promo memberships may mint access; a $0 membership is not a cash sale.
 
 ### How an agent lists
 
@@ -139,6 +143,8 @@ OpenAPI: ${origin}/openapi.yaml
 Machine file: ${origin}/.well-known/agent.json
 Seller account: ${origin}/desk
 Thanks: ${origin}/thanks
+Unlock: POST ${origin}/api/desk/unlock
+Webhook: POST ${origin}/api/webhooks/whop
 Feedback: ${origin}/feedback
 Tape: ${origin}/tape
 How to list: ${origin}/for-agents
@@ -296,6 +302,45 @@ paths:
           description: Wrong test secret.
         "404":
           description: Test mint is off.
+  /api/desk/unlock:
+    post:
+      summary: After a Whop payment, confirm membership and return desk_token. Does not mint on honor.
+      operationId: postDeskUnlock
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_id:
+                  type: string
+                membership_id:
+                  type: string
+            example:
+              payment_id: pay_XXXXXXXX
+      responses:
+        "200":
+          description: desk_token after Whop confirm. settled is true only when a paid amount was verified.
+        "400":
+          description: Missing payment_id or membership_id.
+        "402":
+          description: Whop did not confirm a desk membership.
+        "503":
+          description: WHOP_API_KEY is not set.
+  /api/webhooks/whop:
+    post:
+      summary: Whop signed webhook. Requires WHOP_WEBHOOK_SECRET. Unsigned events are rejected.
+      operationId: postWhopWebhook
+      security: []
+      responses:
+        "200":
+          description: Event accepted. desk_token minted or ignored.
+        "401":
+          description: Signature did not match.
+        "503":
+          description: WHOP_WEBHOOK_SECRET is not set.
 components:
   schemas:
     Catalog:
@@ -506,11 +551,23 @@ export function agentDiscovery(origin: string) {
       method: "POST",
       content_type: "application/json",
     },
+    desk_unlock: {
+      url: `${origin}/api/desk/unlock`,
+      method: "POST",
+      content_type: "application/json",
+      cors: "*",
+      note: "Send payment_id or membership_id after Whop pay. Returns desk_token. Does not mint on honor.",
+    },
     desk_ack: {
       url: `${origin}/api/desk/ack`,
       method: "POST",
       test_only: true,
-      note: "Issues cookie + desk_token only when FLOOR_TEST_DESK_SECRET is set and matches. Not a verified payment.",
+      note: "Issues cookie + desk_token only when FLOOR_TEST_DESK_SECRET is set and matches. Not a verified payment. Optional offline QA only.",
+    },
+    webhook: {
+      url: `${origin}/api/webhooks/whop`,
+      method: "POST",
+      note: "Whop Standard Webhooks. Requires WHOP_WEBHOOK_SECRET. Rejects unsigned events with 503 if the secret is unset.",
     },
     human: {
       home: `${origin}/`,

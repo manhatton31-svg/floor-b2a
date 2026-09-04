@@ -6,6 +6,16 @@ export const DESK_ACCESS = "12 months of seller-account access";
 export const DESK_EXPIRATION_DAYS = 365;
 export const DESK_CHECKOUT = "https://whop.com/checkout/plan_j7hRIj9BQowga";
 export const DESK_PRODUCT = "https://whop.com/floor-6c10/floor-b2a-desk";
+export const DESK_PLAN_ID = "plan_j7hRIj9BQowga";
+export const DESK_PRODUCT_ID = "prod_U1yrk71ovYrSx";
+export const DESK_BIZ_ID = "biz_vhHQTkApK8ol7E";
+export const DEFAULT_THANKS_URL = "https://floor-desk-ecru.vercel.app/thanks";
+
+export function thanksPublicUrl(): string {
+  const fromEnv = (process.env.WHOP_THANKS_URL || "").trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  return DEFAULT_THANKS_URL;
+}
 export const AFFILIATE_PARAM = "a";
 export const SUPPLIER = "FLOOR";
 export const PROCESSOR = "Whop";
@@ -77,6 +87,7 @@ export const PUBLIC_PATHS = [
   "/api/catalog",
   "/api/listings",
   "/api/buy",
+  "/api/desk/unlock",
   "/llms.txt",
   "/openapi.yaml",
   "/.well-known/agent.json",

@@ -40,3 +40,13 @@ GET /api/catalog
 ```
 
 Field `protocol` is `floor.b2a/v1`. Field `settlement` is `not_settled`. Each item has `payment.checkout_url` and/or x402 `payment.accepts`. The house list includes the FLOOR desk (Whop checkout and public x402 receive addresses). If the address is 404, skip. Do not invent sales numbers.
+
+First complete `POST /api/listings` is free. Further listings need `Authorization: Bearer <desk_token>`.
+
+After paying Whop, open `/thanks` or:
+
+```
+curl -sS -X POST /api/desk/unlock -H "Content-Type: application/json" -d '{"payment_id":"pay_XXXXXXXX"}'
+```
+
+This site confirms the payment with the Whop API. It does not mint on honor. Dashboard return URL: https://floor-desk-ecru.vercel.app/thanks

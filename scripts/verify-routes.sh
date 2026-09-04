@@ -7,7 +7,7 @@ SPECS='[{"name":"Capacity","value":"12 oz"},{"name":"Material","value":"ceramic"
 DIGITAL_SPECS='[{"name":"Format","value":"JPEG"},{"name":"Count","value":"24 photos"},{"name":"Resolution","value":"4000 px"},{"name":"Color","value":"sRGB"},{"name":"License","value":"one buyer"},{"name":"Size","value":"120 MB"}]'
 
 echo "== CORS OPTIONS on catalog / listings / buy =="
-for path in /api/catalog /api/listings /api/buy; do
+for path in /api/catalog /api/listings /api/buy /api/desk/unlock; do
   curl -sS -D "/tmp/floor-cors-${path##*/}.hdr" -o /dev/null -X OPTIONS "$BASE$path"
   grep -i '^access-control-allow-origin: \*' "/tmp/floor-cors-${path##*/}.hdr"
   grep -i '^access-control-allow-methods:.*GET' "/tmp/floor-cors-${path##*/}.hdr"
@@ -66,6 +66,8 @@ grep -q "/desk" /tmp/floor-llms.txt
 grep -q "/thanks" /tmp/floor-llms.txt
 grep -q "/api/feedback" /tmp/floor-llms.txt
 grep -q "/api/desk/ack" /tmp/floor-llms.txt
+grep -q "/api/desk/unlock" /tmp/floor-llms.txt
+grep -q "/api/webhooks/whop" /tmp/floor-llms.txt
 ! grep -q FLOORQA /tmp/floor-llms.txt
 ! grep -q "?a=WHOP_USERNAME" /tmp/floor-llms.txt
 ! grep -qi "money does not move" /tmp/floor-llms.txt
@@ -78,6 +80,8 @@ grep -q "/api/listings" /tmp/floor-openapi.yaml
 grep -q "/api/buy" /tmp/floor-openapi.yaml
 grep -q "/api/feedback" /tmp/floor-openapi.yaml
 grep -q "/api/desk/ack" /tmp/floor-openapi.yaml
+grep -q "/api/desk/unlock" /tmp/floor-openapi.yaml
+grep -q "/api/webhooks/whop" /tmp/floor-openapi.yaml
 grep -q "checkout" /tmp/floor-openapi.yaml
 
 echo "== GET /.well-known/agent.json =="
@@ -101,6 +105,8 @@ assert "/thanks" in body["human"]["thanks"]
 assert "/feedback" in body["human"]["feedback"]
 assert "/api/feedback" in body["feedback"]["url"]
 assert "/api/desk/ack" in body["desk_ack"]["url"]
+assert "/api/desk/unlock" in body["desk_unlock"]["url"]
+assert "/api/webhooks/whop" in body["webhook"]["url"]
 assert "gmv" not in body
 assert "FLOORQA" not in json.dumps(body)
 PY
@@ -116,6 +122,7 @@ grep -q "/api/listings" /tmp/floor-sitemap.xml
 grep -q "/for-agents" /tmp/floor-sitemap.xml
 grep -q "/desk" /tmp/floor-sitemap.xml
 grep -q "/thanks" /tmp/floor-sitemap.xml
+grep -q "/api/desk/unlock" /tmp/floor-sitemap.xml
 grep -q "/feedback" /tmp/floor-sitemap.xml
 grep -q "/tape" /tmp/floor-sitemap.xml
 grep -q "/badge.svg" /tmp/floor-sitemap.xml
@@ -130,6 +137,7 @@ test "$code" = "200"
 grep -q "$CTA" /tmp/floor-for.html
 grep -q "How an agent lists" /tmp/floor-for.html
 grep -q "POST /api/listings" /tmp/floor-for.html
+grep -q "/api/desk/unlock" /tmp/floor-for.html
 grep -q "0x0Cd76DDBCF3c249a6437FAA09a2D61E208d86f10" /tmp/floor-for.html
 grep -q "D6Spkkf3oVJBfnTojWKGXZd3TBYpvF4HFe2CihrX9AGL" /tmp/floor-for.html
 ! grep -qiE "isn't human|Agents fill SKUs|keep the desk|keep the seat|lifetime|12-month access|FLOORQA|money does not move" /tmp/floor-for.html
@@ -182,7 +190,9 @@ grep -q "/for-agents" /tmp/floor-thanks.html
 grep -q "/feedback" /tmp/floor-thanks.html
 grep -q "$PAY" /tmp/floor-thanks.html
 grep -q "whop.com/floor-6c10/floor-b2a-desk" /tmp/floor-thanks.html
-grep -q "cannot see the Whop payment" /tmp/floor-thanks.html
+grep -q "does not mint on honor" /tmp/floor-thanks.html
+grep -q "/api/desk/unlock" /tmp/floor-thanks.html
+grep -q "floor-desk-ecru.vercel.app/thanks" /tmp/floor-thanks.html
 ! grep -qiE "lifetime|FLOORQA|gmv" /tmp/floor-thanks.html
 
 echo "== GET /feedback =="
@@ -431,6 +441,42 @@ from pathlib import Path
 a = json.loads(Path("/tmp/floor-idemp-1.json").read_text())
 b = json.loads(Path("/tmp/floor-idemp-2.json").read_text())
 assert a["item"]["sku"] == b["item"]["sku"]
+PY
+
+echo "== POST /api/webhooks/whop without secret is 503 =="
+if [ -z "${WHOP_WEBHOOK_SECRET:-}" ]; then
+  code=$(curl -sS -o /tmp/floor-whop-hook.txt -w "%{http_code}" \
+    -H "Content-Type: application/json" \
+    -d '{"type":"payment.succeeded","data":{"id":"pay_example"}}' \
+    "$BASE/api/webhooks/whop")
+  test "$code" = "503"
+  grep -q "WHOP_WEBHOOK_SECRET" /tmp/floor-whop-hook.txt
+  ! grep -q desk_token /tmp/floor-whop-hook.txt
+fi
+
+echo "== POST /api/desk/unlock without confirm does not mint =="
+if [ -z "${WHOP_API_KEY:-}" ]; then
+  code=$(curl -sS -D /tmp/floor-unlock.hdr -o /tmp/floor-unlock.json -w "%{http_code}" \
+    -H "Content-Type: application/json" \
+    -d '{"payment_id":"pay_example"}' \
+    "$BASE/api/desk/unlock")
+  test "$code" = "503"
+else
+  code=$(curl -sS -D /tmp/floor-unlock.hdr -o /tmp/floor-unlock.json -w "%{http_code}" \
+    -H "Content-Type: application/json" \
+    -d '{}' \
+    "$BASE/api/desk/unlock")
+  test "$code" = "400"
+fi
+grep -i '^access-control-allow-origin: \*' /tmp/floor-unlock.hdr
+python3 - <<'PY'
+import json
+from pathlib import Path
+body = json.loads(Path("/tmp/floor-unlock.json").read_text())
+assert body["ok"] is False
+assert body["settled"] is False
+assert "desk_token" not in body
+assert "gmv" not in body
 PY
 
 echo "== POST /api/desk/ack without secret does not mint =="

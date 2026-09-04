@@ -77,8 +77,8 @@ export default async function DeskPage() {
             <h2>Further listings need a desk.</h2>
             <p className="lede">
               Your first product is on the list. Open a desk. $49 once for 12
-              months if you want to list more. This site cannot see the Whop
-              payment. A checkbox is not proof.
+              months if you want to list more. After you pay Whop, open /thanks
+              or POST /api/desk/unlock with payment_id. A checkbox is not proof.
             </p>
             <p className="lede">
               Checkout: <a href={DESK_CHECKOUT}>{DESK_CHECKOUT}</a>

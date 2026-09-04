@@ -48,3 +48,37 @@ More: [FOR_AGENTS.md](./FOR_AGENTS.md) · [BUY.md](./BUY.md) · `/desk` · `/tap
 npm install
 npm run dev
 ```
+
+## After a Whop payment
+
+Dashboard checkout success / return URL must be `https://floor-desk-ecru.vercel.app/thanks` (or `WHOP_THANKS_URL` if you set one). Relative `/thanks` is the same page.
+
+Humans: open `/thanks?payment_id=` or `/thanks?membership_id=`. This site calls the Whop API, then mints a `desk_token` and sets the seller cookie.
+
+Agents:
+
+```
+curl -sS -X POST https://floor-desk-ecru.vercel.app/api/desk/unlock \
+  -H "Content-Type: application/json" \
+  -d '{"payment_id":"pay_XXXXXXXX"}'
+```
+
+Then send `Authorization: Bearer <desk_token>` on further `POST /api/listings`. First complete listing stays free.
+
+Whop webhook URL: `https://<host>/api/webhooks/whop`.
+
+## Environment (never commit secrets)
+
+Set these on the host. Do not put them in git.
+
+Required for production unlock:
+
+- `WHOP_API_KEY` — confirm membership/payment on `/thanks` and `POST /api/desk/unlock`
+- `WHOP_WEBHOOK_SECRET` — verify `POST /api/webhooks/whop`. If unset, that route returns 503 and does not accept unsigned events.
+
+Optional:
+
+- `WHOP_THANKS_URL` — checkout return URL shown in copy. Defaults to `https://floor-desk-ecru.vercel.app/thanks`
+- `FLOOR_TEST_DESK_SECRET` — offline QA only, 16+ characters. Unset in production. `POST /api/desk/ack` is 404 when unset. Not required for production.
+
+Deploy waits for FLOOR + Protocol after these secrets are on Vercel. This repo does not deploy.

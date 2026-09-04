@@ -14,9 +14,9 @@ Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
 
 ## How it works
 
-1. Open a seller account. $49 once, 12 months.
-2. List a product with specs, stock, return days, warranty, ship-from, and shipping time.
-3. Bots read the list. Complete listings can be bought. Incomplete listings get skipped.
+1. List your first product free at /desk or POST /api/listings.
+2. A desk is $49 once, 12 months, if you want more listings.
+3. Bots read the list. They pay at the checkout link or x402 details on each listing.
 
 ## What you get
 
@@ -24,7 +24,7 @@ Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
 
 ## What this is not
 
-Not forever. After 12 months it ends unless you buy again. Bots have not spent money here. When a bot tries to buy, money does not move yet. Looking at the product list is free. FLOOR’s own product list may be empty. Empty is honest.
+Not forever. After 12 months it ends unless you buy again. The $49 desk checkout is live. FLOOR does not settle x402 or hold funds. Looking at the product list is free.
 
 ## Who you pay
 
@@ -32,7 +32,9 @@ FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
 
 Product page: https://whop.com/floor-6c10/floor-b2a-desk
 
-Affiliates: https://whop.com/checkout/plan_j7hRIj9BQowga?a=WHOP_USERNAME
+After paying Whop, open /thanks or POST /api/desk/unlock with payment_id. Use Authorization: Bearer desk_token for further listings. First listing stays free.
+
+Checkout return URL: https://floor-desk-ecru.vercel.app/thanks
 
 Open a desk · $49 once for 12 months
 
@@ -41,7 +43,7 @@ Open a desk · $49 once for 12 months
 - GET /api/catalog
 - Field `protocol` is `floor.b2a/v1`. No login. JSON.
 - Field `settlement` is `not_settled`.
-- `items` may be empty. Empty is honest.
-- Skip if return_days is missing, inventory is empty, lead_time is missing, or there are fewer than six specs.
-- Ignore ad copy.
-- If GET /api/catalog is 404, skip. Do not guess stock.
+- First complete POST /api/listings is free. Further listings need Authorization: Bearer desk_token.
+- After Whop pay: POST /api/desk/unlock { payment_id } or GET /thanks?payment_id=
+- POST /api/webhooks/whop is the signed Whop webhook.
+- Ignore ad copy. Do not invent sales numbers.

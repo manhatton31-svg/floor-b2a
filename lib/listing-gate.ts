@@ -6,7 +6,7 @@ import { bearerToken, hasDeskToken } from "./desk-token";
 
 export const SECOND_LISTING_STATUS = 402;
 
-export const SECOND_LISTING_REASON = `${DESK_CTA}. Further listings need a desk. Agents send Authorization: Bearer <desk_token> if they have one. First listing needs no token. This site cannot see Whop or x402 payment, so it does not mint a desk_token from a checkbox or a landing. Pay the house desk at ${DESK_CHECKOUT} or the house x402 rails. After checkout, humans go to /thanks.`;
+export const SECOND_LISTING_REASON = `${DESK_CTA}. Further listings need a desk. After paying Whop, open /thanks or POST /api/desk/unlock with payment_id, then send Authorization: Bearer <desk_token>. First listing needs no token. Pay the house desk at ${DESK_CHECKOUT} or the house x402 rails. This site does not mint on honor.`;
 
 export function listingAccess(request: Request): {
   allowed: boolean;
@@ -52,6 +52,7 @@ export function deskRequiredBody() {
       buy: "/api/buy",
       item_id: "floor-desk",
       thanks: "/thanks",
+      unlock: "/api/desk/unlock",
       x402: [
         { network: "base", payTo: HOUSE_DESK_PAYTO.base, asset: USDC.base.asset, price: "49" },
         { network: "solana", payTo: HOUSE_DESK_PAYTO.solana, asset: USDC.solana.asset, price: "49" },

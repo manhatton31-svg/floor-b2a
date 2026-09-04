@@ -10,7 +10,7 @@ import {
   DESK_TOKEN_COOKIE,
 } from "@/lib/desk-ack";
 import { hasDeskToken } from "@/lib/desk-token";
-import { DESK_CHECKOUT, DESK_CTA, DESK_PRODUCT } from "@/lib/site";
+import { DESK_CHECKOUT, DESK_CTA, DESK_PRODUCT, thanksPublicUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,18 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ desk_token?: string | string[]; token?: string | string[]; once?: string; unknown?: string }>;
+  searchParams: Promise<{
+    desk_token?: string | string[];
+    token?: string | string[];
+    payment_id?: string | string[];
+    membership_id?: string | string[];
+    receipt_id?: string | string[];
+    code?: string | string[];
+    once?: string;
+    unknown?: string;
+    unpaid?: string;
+    why?: string;
+  }>;
 };
 
 function first(value: string | string[] | undefined): string {
@@ -30,9 +41,13 @@ function first(value: string | string[] | undefined): string {
 
 export default async function ThanksPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const incoming = first(params.desk_token) || first(params.token);
-  if (incoming) {
-    redirect(`/api/desk/welcome?desk_token=${encodeURIComponent(incoming)}`);
+  const q = new URLSearchParams();
+  for (const key of ["desk_token", "token", "payment_id", "membership_id", "receipt_id", "code"] as const) {
+    const value = first(params[key]);
+    if (value) q.set(key, value);
+  }
+  if ([...q.keys()].length) {
+    redirect(`/api/desk/welcome?${q.toString()}`);
   }
 
   const jar = await cookies();
@@ -41,11 +56,14 @@ export default async function ThanksPage({ searchParams }: PageProps) {
   const paidCookie = jar.get(DESK_ACK_COOKIE)?.value === DESK_ACK_VALUE;
   const showOnce = params.once === "1" && reveal.startsWith("desk_") && hasDeskToken(reveal);
   const accepted = paidCookie || (stored.startsWith("desk_") && hasDeskToken(stored));
+  const unpaid = params.unpaid === "1";
+  const why = first(params.why);
+  const returnUrl = thanksPublicUrl();
 
   return (
     <main className="wrap">
       <p className="kicker">After checkout</p>
-      <h1>You have 12 months.</h1>
+      <h1>{unpaid ? "Pay first." : "You have 12 months."}</h1>
       <p className="lede">
         List products at <a href="/desk">/desk</a>. A desk is $49 once for 12
         months. Not forever.
@@ -56,9 +74,12 @@ export default async function ThanksPage({ searchParams }: PageProps) {
         free.
       </p>
       <p className="lede">
-        This site cannot see the Whop payment. Landing here does not invent a
-        sale and does not mint a desk_token. After a real rail confirms, a
-        token can be accepted from <code>?desk_token=</code> or a desk cookie.
+        After you pay Whop, this page confirms the membership with the Whop API,
+        then mints a desk_token. Landing here with no receipt does not mint. We
+        do not mint on honor. Agents can POST /api/desk/unlock with payment_id.
+      </p>
+      <p className="lede">
+        Whop checkout return URL: <a href={returnUrl}>{returnUrl}</a>
       </p>
       <p className="price">{DESK_CTA}</p>
 
@@ -66,6 +87,13 @@ export default async function ThanksPage({ searchParams }: PageProps) {
         <p className="fail" role="alert">
           That desk_token is not one this site issued. We did not mark you as
           paid.
+        </p>
+      ) : null}
+
+      {unpaid ? (
+        <p className="fail" role="alert">
+          {why || "We could not confirm a paid desk membership."} Pay first at
+          checkout, then come back with a payment_id or membership_id.
         </p>
       ) : null}
 
@@ -86,8 +114,9 @@ export default async function ThanksPage({ searchParams }: PageProps) {
         </p>
       ) : (
         <p className="lede">
-          No verified desk cookie is set. Pay at checkout, then come back. QA
-          can mint a test token only with <code>FLOOR_TEST_DESK_SECRET</code> at
+          No verified desk cookie is set. Pay at checkout. Then open /thanks
+          with payment_id or membership_id, or POST /api/desk/unlock. QA can
+          mint a test token only with <code>FLOOR_TEST_DESK_SECRET</code> at
           POST /api/desk/ack. That path is not a sale.
         </p>
       )}

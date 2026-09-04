@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       {
         ok: false,
         reason:
-          "Test desk mint is off. This site cannot verify Whop membership, so it does not issue a desk_token. Set FLOOR_TEST_DESK_SECRET to enable the QA path only.",
+          "Test desk mint is off. After a Whop payment use /thanks or POST /api/desk/unlock. Set FLOOR_TEST_DESK_SECRET only for offline QA.",
         field: "secret",
         skip: ["no test secret"],
         settled: false,
