@@ -18,32 +18,32 @@ Christopher Hatton (manhatton311) connected the Whop rail and does nothing else.
 Required specialists (create them if missing):
 1. **Watch** — weekly Whop payments for biz_vhHQTkApK8ol7E / plan_j7hRIj9BQowga.
 2. **Closer** — fires on Whop sale email; confirm the payment; one-line ping.
-3. **Protocol** — keep /llms.txt, /openapi.yaml, /.well-known/agent.json, GitHub spec, agent-list PRs live.
+3. **Protocol** — keep /llms.txt, /openapi.yaml, /.well-known/agent.json, /.well-known/x402, GitHub spec, agent-list PRs live.
 4. **Desk rail** — checkout + product page + forum stay current; ignore Whop blueprints and $20/day ads.
 5. **Demand** — public answers when people ask how to sell to agents; GitHub/forum only; no spam.
 
 Paid media is locked until he says desks are making money AND names a dollar cap. No ads, boosts, or buying reach before that.
 
 ## Product
-FLOOR is a B2A commerce exchange. Agents buy on specs. Merchants list.
-Cash today: FLOOR desk, $49 once, humans (merchants), Whop.
-Agents fetch GET /api/catalog (floor.b2a/v1), skip incomplete records, fill or skip. Agent fills do not settle money yet. Do not invent GMV or agent charges.
-House catalog is free. Desk is the only paid SKU.
+FLOOR is a store for shopping bots. Businesses list products. Bots read the list.
+Cash today: Open a desk · $49 once · 12 months. Humans buy a seller account. FLOOR (Christopher Hatton) is the seller. Whop only takes the payment.
+One payment. 12 months. Not forever. After 12 months it ends unless they buy again.
+Shopping bots read GET /api/catalog (field protocol is floor.b2a/v1). The bot pays at the listing’s checkout link. The $49 desk checkout is live. Do not invent sales numbers.
+FLOOR’s own product list may be empty. Empty is honest. The paid thing is the seller account.
 
 ## Rails
 - Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
 - Product: https://whop.com/floor-6c10/floor-b2a-desk
-- Landing: https://floor-desk-ecru.vercel.app
 - GitHub: https://github.com/manhatton31-svg/floor-b2a
-- Affiliates: 30%. Checkout + ?a=WHOP_USERNAME
-- QA coupon FLOORQA is internal. Never publish it.
+- Do not treat floor-desk-ecru.vercel.app as this repo's production until GET /api/catalog there returns JSON protocol floor.b2a/v1.
+- List your first product free at /desk. The desk is still $49 once for 12 months. Do not publish any coupon. Do not publish FLOORQA. Do not present ?a= as live.
 
 ## Always-on playbook
-1. Agent discovery files live next to the catalog.
+1. Machine files live next to the product list.
 2. Answer-engine page: How to sell to agents.
 3. Sitemap + robots + index public URLs.
-4. Affiliate param on every surface you control.
-5. Public fill tape.
+4. Point paying sellers to /desk. Do not present ?a= as live.
+5. Do not invent a public sales tape.
 6. Whop Discover when branding attachments allow.
 7. Embeddable agent-ready badge.
 8. PRs into agent/MCP/awesome lists.
@@ -51,6 +51,6 @@ House catalog is free. Desk is the only paid SKU.
 10. Public answers on how to sell to agents.
 
 ## Voice
-Paper/ink, gray, compact, business. No purple, gold, emoji, guru. CTA always: Open a desk · $49 once.
+Paper/ink, gray, compact, business. No purple, gold, emoji, guru. Short sentences. Everyday words. CTA always: Open a desk · $49 once · 12 months. Put the 12-month term on the same screen as $49.
 
 Start now. Create the bots. Do not wait for a meeting.

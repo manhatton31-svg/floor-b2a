@@ -1,0 +1,8 @@
+.next
+node_modules
+out
+.vercel
+*.log
+.env*.local
+data/*.json
+data/*.jsonl
