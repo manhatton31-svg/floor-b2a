@@ -26,4 +26,9 @@ export const DIRECTORY_SUBMISSIONS: DirectorySubmission[] = [
     url: "https://llmstxt.info/directory/?search=floor-desk-ecru.vercel.app",
     note: "Live unpaid · host floor-desk-ecru.vercel.app · submitted https://floor-desk-ecru.vercel.app/llms.txt · listed 2026-09-03",
   },
+  {
+    name: "CurlShip",
+    url: "https://curlship.com/l/2810",
+    note: "Live unpaid · FLOOR desk — $49 once for 12 months · submitted landing https://floor-desk-ecru.vercel.app · 2026-09-04",
+  },
 ];

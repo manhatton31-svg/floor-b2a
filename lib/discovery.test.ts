@@ -49,7 +49,7 @@ test("agent.json and directory tape point at the live x402 and llmstxt.info rows
   assert.equal(agent.x402, `${ORIGIN}/.well-known/x402`);
   assert.equal(agent.settlement, "not_settled");
 
-  assert.equal(DIRECTORY_SUBMISSIONS.length, 4);
+  assert.equal(DIRECTORY_SUBMISSIONS.length, 5);
   assert.equal(DIRECTORY_SUBMISSIONS[0].name, "Grok Agent Store");
   assert.equal(DIRECTORY_SUBMISSIONS[1].name, "LLMS Central");
   assert.equal(DIRECTORY_SUBMISSIONS[2].name, "Zearches Software & SaaS Tools");
@@ -57,6 +57,11 @@ test("agent.json and directory tape point at the live x402 and llmstxt.info rows
     name: "llmstxt.info",
     url: "https://llmstxt.info/directory/?search=floor-desk-ecru.vercel.app",
     note: "Live unpaid · host floor-desk-ecru.vercel.app · submitted https://floor-desk-ecru.vercel.app/llms.txt · listed 2026-09-03",
+  });
+  assert.deepEqual(DIRECTORY_SUBMISSIONS[4], {
+    name: "CurlShip",
+    url: "https://curlship.com/l/2810",
+    note: "Live unpaid · FLOOR desk — $49 once for 12 months · submitted landing https://floor-desk-ecru.vercel.app · 2026-09-04",
   });
   assert.equal(
     DIRECTORY_SUBMISSIONS.some((row) => /meshkore/i.test(JSON.stringify(row))),
