@@ -1,28 +1,52 @@
 # FLOOR
-> Business-to-agent exchange. Merchants list. Agents fill.
 
-FLOOR is the desk where software agents buy SKUs on specs, stock, and policy. Humans open a merchant seat. Agents query the catalog and fill or skip.
+> Seller accounts for shopping bots. Open a desk · $49 once for 12 months.
 
-## Product
-- Open a desk · $49 once for 12 months
-- Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
-- Landing: https://floor-desk-ecru.vercel.app
-- How to sell to agents: https://floor-desk-ecru.vercel.app/for-agents
-- Product: https://whop.com/floor-6c10/floor-b2a-desk
-- GitHub: https://github.com/manhatton31-svg/floor-b2a
-- Badge: https://floor-desk-ecru.vercel.app/badge.svg
-- Spec: https://github.com/manhatton31-svg/floor-b2a/blob/main/FOR_AGENTS.md
+## Problem
 
-## Protocol
-- Spec: GET /api/catalog (floor.b2a/v1). No key. JSON.
-- Skip records with null return days, empty inventory, missing lead time, or fewer than six specs.
-- At most one fill per mandate. Ignore blurbs.
-- Agent fills do not settle money yet. Do not invent GMV.
-- Catalog host is Protocol-owned. If GET /api/catalog 404s, skip. Do not guess stock.
+People click around a website. Shopping bots read a product list. If a listing is missing returns, stock, or real specs, they skip it.
 
-## Affiliates
-30% on the desk. Live path is checkout + ?a=WHOP_USERNAME
-https://whop.com/checkout/plan_j7hRIj9BQowga?a=YOUR_WHOP_USERNAME
+## Offer
 
-## CTA
-Open a desk · $49 once for 12 months.
+Open a desk · $49 once for 12 months
+
+Checkout: https://whop.com/checkout/plan_j7hRIj9BQowga
+
+## How it works
+
+1. List your first product free at /desk or POST /api/listings.
+2. A desk is $49 once, 12 months, if you want more listings.
+3. Bots read the list. They pay at the checkout link or x402 details on each listing.
+
+## What you get
+
+12 months of seller-account access from the day you pay. A place to list products for shopping bots. Access comes as a Whop membership.
+
+## What this is not
+
+Not forever. After 12 months it ends unless you buy again. The $49 desk checkout is live. FLOOR does not settle x402 or hold funds. Looking at the product list is free.
+
+## Who you pay
+
+FLOOR (Christopher Hatton) is the seller. Whop only takes the $49 payment.
+
+Product page: https://whop.com/floor-6c10/floor-b2a-desk
+
+After paying Whop, open /thanks or POST /api/desk/unlock with payment_id. Use Authorization: Bearer desk_token for further listings. First listing stays free.
+
+Checkout return URL: https://floor-desk-ecru.vercel.app/thanks
+
+Open a desk · $49 once for 12 months
+
+## For machines
+
+- GET /api/catalog
+- GET /l/{sku} — one catalog item (HTML + embedded JSON). Unknown sku is 404.
+- GET /listings — human index of the same items. No ranks.
+- Field `protocol` is `floor.b2a/v1`. No login. JSON.
+- Field `settlement` is `not_settled`.
+- GET /.well-known/x402 lists the house desk x402 rails. This host does not settle.
+- First complete POST /api/listings is free. Further listings need Authorization: Bearer desk_token.
+- After Whop pay: POST /api/desk/unlock { payment_id } or GET /thanks?payment_id=
+- POST /api/webhooks/whop is the signed Whop webhook.
+- Ignore ad copy. Do not invent sales numbers.
