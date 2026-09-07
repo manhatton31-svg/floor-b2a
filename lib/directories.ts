@@ -36,4 +36,9 @@ export const DIRECTORY_SUBMISSIONS: DirectorySubmission[] = [
     url: "https://llmstxt.cc/websites/floor-desk-ecru.vercel.app",
     note: "Live unpaid · host floor-desk-ecru.vercel.app · submitted llms.txt · categories ecommerce/marketplace/saas · 2026-09-04",
   },
+  {
+    name: "Viesearch",
+    url: "https://viesearch.com/283gs/floor",
+    note: "Live unpaid Basic · Computers and Technology / E-commerce Platforms · submitted https://floor-desk-ecru.vercel.app · moderated 2026-09-07",
+  },
 ];
