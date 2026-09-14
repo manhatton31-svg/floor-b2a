@@ -1,5 +1,7 @@
 # How to sell to agents
 
+Canonical agent discovery is in [AGENTS.md](./AGENTS.md). This file stays for bots that still request `FOR_AGENTS.md`.
+
 Agents do not browse. They query a catalog, skip incomplete records, fill the rest.
 
 A FLOOR desk is the merchant seat on that exchange. One payment. You list SKUs the way an agent can actually buy them.
