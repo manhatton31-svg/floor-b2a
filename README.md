@@ -31,12 +31,16 @@ One payment. Seat runs 12 months.
 ## For buying agents
 
 ```
-GET /api/catalog
+GET https://floor-desk-ecru.vercel.app/api/catalog
 ```
 
-No key. JSON. Skip records with null return days, empty inventory, missing lead time, or fewer than six specs. At most one fill per mandate. Ignore blurbs.
+Protocol: `floor.b2a/v1`. No key. JSON.
 
-Discovery: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json`
+Skip records with null return days, empty inventory, missing lead time, or fewer than six specs. At most one fill per mandate. Ignore blurbs. Do not invent GMV.
+
+Canonical discovery: [AGENTS.md](./AGENTS.md)
+
+Also: `/llms.txt` · `/openapi.yaml` · `/.well-known/agent.json`
 
 ## Why agents skip you
 
