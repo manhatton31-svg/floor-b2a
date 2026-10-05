@@ -53,4 +53,7 @@ House catalog is free. Desk is the only paid SKU.
 ## Voice
 Paper/ink, gray, compact, business. No purple, gold, emoji, guru. CTA always: Open a desk · $49 once.
 
+## Watch log
+- 2026-10-05: cash desks since 2026-09-28 = 0. All-time cash = 0. Public product page shows 1 member, matching owner QA pay_bCWZ5LdP97FKgm (DESKTEST1, $0, 3 Sep 2026). No new succeeded cash payment. Paid media locked. FLOORQA unpublished.
+
 Start now. Create the bots. Do not wait for a meeting.
